@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2025 Credit Card Spending Analysis</title>
+  <title>Credit Card Spending Analysis</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -199,7 +199,7 @@
     };
 
     const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const MONTH_KEYS = MONTHS_SHORT.map((_, i) => `2025-${String(i+1).padStart(2,'0')}`);
+    // MONTH_KEYS is derived dynamically from transaction data (see App component)
 
     // Card recommendations per category
     const CARD_RECS = {
@@ -260,10 +260,10 @@
       const parts = dateStr.split('/');
       if (parts.length !== 3) return null;
       const [m, d, y] = parts;
-      if (y !== '2025') return null;
+      if (!y || y.length !== 4) return null;
       return { year: y, month: String(m).padStart(2,'0'), day: String(d).padStart(2,'0'),
-               monthKey: `2025-${String(m).padStart(2,'0')}`,
-               dateStr: `2025-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}` };
+               monthKey: `${y}-${String(m).padStart(2,'0')}`,
+               dateStr: `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}` };
     }
 
     function detectCard(headerLine) {
@@ -661,7 +661,7 @@
       return <canvas ref={ref} width={size} height={size} style={{ display: 'block' }} />;
     }
 
-    function MonthlyBarChart({ monthlyByCard }) {
+    function MonthlyBarChart({ monthlyByCard, monthKeys }) {
       const ref = useRef();
       const chartInst = useRef();
       useEffect(() => {
@@ -673,9 +673,9 @@
           data: {
             labels: MONTHS_SHORT,
             datasets: [
-              { label: 'Amex',       data: MONTH_KEYS.map(m => monthlyByCard['Amex']?.[m] || 0),       backgroundColor: 'rgba(37,99,235,0.85)',  borderRadius: 4, borderSkipped: false },
-              { label: 'Apple Card', data: MONTH_KEYS.map(m => monthlyByCard['Apple Card']?.[m] || 0), backgroundColor: 'rgba(124,58,237,0.85)', borderRadius: 4, borderSkipped: false },
-              { label: 'Chase',      data: MONTH_KEYS.map(m => monthlyByCard['Chase']?.[m] || 0),      backgroundColor: 'rgba(14,165,233,0.85)', borderRadius: 4, borderSkipped: false },
+              { label: 'Amex',       data: monthKeys.map(m => monthlyByCard['Amex']?.[m] || 0),       backgroundColor: 'rgba(37,99,235,0.85)',  borderRadius: 4, borderSkipped: false },
+              { label: 'Apple Card', data: monthKeys.map(m => monthlyByCard['Apple Card']?.[m] || 0), backgroundColor: 'rgba(124,58,237,0.85)', borderRadius: 4, borderSkipped: false },
+              { label: 'Chase',      data: monthKeys.map(m => monthlyByCard['Chase']?.[m] || 0),      backgroundColor: 'rgba(14,165,233,0.85)', borderRadius: 4, borderSkipped: false },
             ]
           },
           options: {
@@ -783,7 +783,7 @@
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>💳</div>
             <h1 style={{ fontSize: 36, fontWeight: 800, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6,#06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 12 }}>
-              2025 Spending Analysis
+              Spending Analysis
             </h1>
             <p style={{ color: '#94a3b8', fontSize: 16, maxWidth: 460, margin: '0 auto' }}>
               Upload your Amex, Apple Card, and Chase CSV exports to get a full picture of your household spending with smart optimization tips.
@@ -827,7 +827,7 @@
     //  OVERVIEW TAB
     // ─────────────────────────────────────────
 
-    function OverviewTab({ transactions, categoryData, monthlyByCard, cardData, cardHolderData }) {
+    function OverviewTab({ transactions, categoryData, monthlyByCard, cardData, cardHolderData, monthKeys }) {
       const total = transactions.reduce((s,t) => s+t.amount, 0);
       const txCount = transactions.length;
       const topCat = categoryData[0];
@@ -837,7 +837,7 @@
         const sorted = Object.entries(byM).sort((a,b)=>b[1]-a[1]);
         if (!sorted.length) return null;
         const [key, val] = sorted[0];
-        const idx = MONTH_KEYS.indexOf(key);
+        const idx = monthKeys.indexOf(key);
         return { label: MONTHS_SHORT[idx] || key, val };
       }, [transactions]);
 
@@ -891,7 +891,7 @@
             {/* Monthly chart */}
             <div className="card">
               <div className="section-title">Monthly Spend by Card</div>
-              <MonthlyBarChart monthlyByCard={monthlyByCard} />
+              <MonthlyBarChart monthlyByCard={monthlyByCard} monthKeys={monthKeys} />
               {/* Card totals */}
               <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
                 {Object.entries(cardData).map(([card, total]) => {
@@ -987,15 +987,15 @@
     //  TRENDS TAB
     // ─────────────────────────────────────────
 
-    function TrendsTab({ transactions, monthlyByCard, topMerchants }) {
+    function TrendsTab({ transactions, monthlyByCard, topMerchants, monthKeys }) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div className="card">
             <div className="section-title">Monthly Spending Trend</div>
-            <MonthlyBarChart monthlyByCard={monthlyByCard} />
+            <MonthlyBarChart monthlyByCard={monthlyByCard} monthKeys={monthKeys} />
             <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
               {MONTHS_SHORT.map((mo, idx) => {
-                const key = MONTH_KEYS[idx];
+                const key = monthKeys[idx];
                 const total = Object.values(monthlyByCard).reduce((s, byM) => s + (byM[key]||0), 0);
                 return (
                   <div key={mo} style={{ textAlign: 'center', padding: '8px 4px', background: '#0f172a', borderRadius: 8 }}>
@@ -1315,7 +1315,7 @@
             <InsightCard
               emoji="🚨"
               title="Interest Charges Are Burning Cash"
-              headline={`${fmt(interestFees)} paid in interest in 2025`}
+              headline={`${fmt(interestFees)} paid in interest`}
               tag="ACTION REQUIRED"
               tagColor="#ef4444"
               body={`This is pure cost with zero benefit. Consider: (1) Always pay your statement balance in full each month to eliminate interest entirely. (2) If carrying a balance, a 0% APR balance transfer card (e.g., Citi Diamond Preferred — 21 months 0%) could save you this amount while you pay it down. At your spending level this is your single highest-impact financial change.`}
@@ -1498,7 +1498,7 @@
           </div>
 
           <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
-            * Reward estimates based on publicly available card terms as of early 2025. Transfer partner values and card benefits may change. Annual fees not included in opportunity calculations.
+            * Reward estimates based on publicly available card terms. Transfer partner values and card benefits may change. Annual fees not included in opportunity calculations.
           </div>
         </div>
       );
@@ -1508,7 +1508,7 @@
     //  TAX TAB
     // ─────────────────────────────────────────
 
-    function TaxTab({ transactions }) {
+    function TaxTab({ transactions, dataYear }) {
       const [agi, setAgi] = useState('');
       const [copied, setCopied] = useState(false);
 
@@ -1535,7 +1535,7 @@
 
       const copyForTaxPrep = useCallback(() => {
         const lines = [
-          '2025 CHARITABLE CONTRIBUTIONS — Schedule A',
+          `${dataYear} CHARITABLE CONTRIBUTIONS — Schedule A`,
           '='.repeat(52),
           '',
           ...charityTxs.map(t =>
@@ -1559,7 +1559,7 @@
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ fontSize: 40 }}>🧾</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: 20, color: '#f0fdf4', marginBottom: 4 }}>2025 Tax-Deductible Summary</div>
+                <div style={{ fontWeight: 800, fontSize: 20, color: '#f0fdf4', marginBottom: 4 }}>Tax-Deductible Summary</div>
                 <div style={{ color: '#86efac', fontSize: 14 }}>Itemized deduction candidates pulled from your categorized transactions. Verify each with official receipts before filing.</div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -1716,7 +1716,7 @@
             {/* AGI calculator */}
             <div style={{ background: '#0f172a', borderRadius: 10, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <label style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>Enter your 2025 AGI:</label>
+                <label style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>Enter your AGI:</label>
                 <input
                   type="text"
                   placeholder="e.g. 350000"
@@ -1921,6 +1921,18 @@
         };
       }, [effectiveTxs]);
 
+      const dataYear = useMemo(() => {
+        if (!effectiveTxs.length) return String(new Date().getFullYear());
+        const counts = {};
+        effectiveTxs.forEach(t => { counts[t.year] = (counts[t.year] || 0) + 1; });
+        return Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0];
+      }, [effectiveTxs]);
+
+      const monthKeys = useMemo(() =>
+        MONTHS_SHORT.map((_, i) => `${dataYear}-${String(i+1).padStart(2,'0')}`),
+        [dataYear]
+      );
+
       const loadedCount = [rawFiles.amex, rawFiles.apple, rawFiles.chase].filter(Boolean).length;
 
       if (loadedCount === 0) {
@@ -1946,10 +1958,10 @@
             <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontWeight: 900, fontSize: 22, background: 'linear-gradient(90deg,#3b82f6,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  💳 2025 Spending Analysis
+                  💳 Spending Analysis
                 </div>
                 <div style={{ color: '#64748b', fontSize: 13, marginTop: 2 }}>
-                  {loadedCount} card{loadedCount > 1 ? 's' : ''} · {transactions.length.toLocaleString()} transactions · {fmt(totalSpend)} total
+                  {dataYear} · {loadedCount} card{loadedCount > 1 ? 's' : ''} · {transactions.length.toLocaleString()} transactions · {fmt(totalSpend)} total
                 </div>
               </div>
               {/* Loaded badges */}
@@ -1979,12 +1991,12 @@
 
           {/* Content */}
           <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px' }} className="fade-in" key={activeTab}>
-            {activeTab === 'overview'     && <OverviewTab transactions={effectiveTxs} categoryData={categoryData} monthlyByCard={monthlyByCard} cardData={cardData} cardHolderData={cardHolderData} />}
+            {activeTab === 'overview'     && <OverviewTab transactions={effectiveTxs} categoryData={categoryData} monthlyByCard={monthlyByCard} cardData={cardData} cardHolderData={cardHolderData} monthKeys={monthKeys} />}
             {activeTab === 'categories'   && <CategoriesTab categoryData={categoryData} transactions={effectiveTxs} />}
-            {activeTab === 'trends'       && <TrendsTab transactions={effectiveTxs} monthlyByCard={monthlyByCard} topMerchants={topMerchants} />}
+            {activeTab === 'trends'       && <TrendsTab transactions={effectiveTxs} monthlyByCard={monthlyByCard} topMerchants={topMerchants} monthKeys={monthKeys} />}
             {activeTab === 'transactions' && <TransactionsTab transactions={effectiveTxs} overrides={overrides} onOverride={handleOverride} onResetAll={handleResetAll} />}
             {activeTab === 'insights'     && <InsightsTab transactions={effectiveTxs} categoryData={categoryData} topMerchants={topMerchants} />}
-            {activeTab === 'tax'          && <TaxTab transactions={effectiveTxs} />}
+            {activeTab === 'tax'          && <TaxTab transactions={effectiveTxs} dataYear={dataYear} />}
           </div>
 
           {/* Toast notification */}
