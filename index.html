@@ -939,10 +939,86 @@
     //  CATEGORIES TAB
     // ─────────────────────────────────────────
 
+    function CategoryDrilldown({ category, transactions, total, onClose }) {
+      const cfg = CATEGORY_CONFIG[category] || CATEGORY_CONFIG['Other'];
+      const catTxs = transactions.filter(t => t.category === category);
+      const catTotal = catTxs.reduce((s,t) => s+t.amount, 0);
+
+      const topMerchants = useMemo(() => {
+        const byM = {};
+        catTxs.forEach(t => {
+          const key = cleanMerchant(t.merchant || t.description);
+          if (!byM[key]) byM[key] = { name: key, total: 0, count: 0 };
+          byM[key].total += t.amount;
+          byM[key].count++;
+        });
+        return Object.values(byM).sort((a,b) => b.total - a.total).slice(0, 10);
+      }, [category, transactions]);
+
+      return (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(0,0,0,0.7)' }}
+          onClick={onClose}>
+          <div style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 28, background: cfg.bg, borderRadius: 12, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {cfg.icon}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 18, color: '#f1f5f9' }}>{category}</div>
+                <div style={{ color: '#64748b', fontSize: 13 }}>{catTxs.length} transactions · {fmtD(catTotal)} total</div>
+              </div>
+              <button onClick={onClose} style={{ background: '#1e293b', color: '#94a3b8', borderRadius: 8, padding: '6px 10px', fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Top merchants */}
+            <div style={{ padding: '16px 24px 24px' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+                Top {topMerchants.length} Merchants
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {topMerchants.map((m, i) => {
+                  const pct = (m.total / catTotal) * 100;
+                  return (
+                    <div key={m.name}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 5 }}>
+                        <span style={{ color: '#475569', fontSize: 12, fontWeight: 700, width: 18, flexShrink: 0 }}>#{i+1}</span>
+                        <span style={{ flex: 1, color: '#e2e8f0', fontSize: 14, fontWeight: 600 }} className="truncate">{m.name}</span>
+                        <span style={{ color: '#64748b', fontSize: 12, flexShrink: 0 }}>{m.count} tx</span>
+                        <span style={{ fontWeight: 800, fontSize: 15, color: cfg.color, flexShrink: 0, width: 80, textAlign: 'right' }}>{fmt(m.total)}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ flex: 1, background: '#1e293b', borderRadius: 999, height: 6, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', borderRadius: 999, background: cfg.color, width: `${pct}%`, transition: 'width 0.4s ease' }} />
+                        </div>
+                        <span style={{ color: '#475569', fontSize: 12, width: 36, textAlign: 'right', flexShrink: 0 }}>{pct.toFixed(0)}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     function CategoriesTab({ categoryData, transactions }) {
       const total = transactions.reduce((s,t) => s+t.amount, 0);
+      const [drillCategory, setDrillCategory] = useState(null);
+
       return (
         <div>
+          {drillCategory && (
+            <CategoryDrilldown
+              category={drillCategory}
+              transactions={transactions}
+              total={total}
+              onClose={() => setDrillCategory(null)}
+            />
+          )}
           <div className="grid-2">
             {categoryData.map(({ category, total: catTotal }) => {
               const cfg = CATEGORY_CONFIG[category] || CATEGORY_CONFIG['Other'];
@@ -951,7 +1027,8 @@
               const avgTx = catTxs.length ? catTxs.reduce((s,t)=>s+t.amount,0)/catTxs.length : 0;
               const rec = CARD_RECS[category];
               return (
-                <div key={category} className="card">
+                <div key={category} className="card" style={{ cursor: 'pointer' }}
+                  onClick={() => setDrillCategory(category)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                     <div style={{ fontSize: 28, background: cfg.bg, borderRadius: 12, width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {cfg.icon}
@@ -975,6 +1052,9 @@
                       <span style={{ color: '#64748b' }}> · {rec.rate}</span>
                     </div>
                   )}
+                  <div style={{ marginTop: 10, color: '#334155', fontSize: 12, textAlign: 'right' }}>
+                    Top merchants →
+                  </div>
                 </div>
               );
             })}
