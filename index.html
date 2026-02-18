@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2025 Credit Card Spending Analysis</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .fade-in { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+    input[type=file] { display: none; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; }
+    select, input[type=text], input[type=search] {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    select:focus, input[type=text]:focus, input[type=search]:focus { border-color: #3b82f6; }
+    select option { background: #1e293b; }
+    .cat-select {
+      background: #1e293b; border: 1px solid #3b82f6; color: #e2e8f0;
+      border-radius: 8px; padding: 4px 8px; font-size: 12px; outline: none;
+      cursor: pointer; max-width: 210px;
+    }
+    .cat-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.15s, filter 0.15s; white-space: nowrap;
+    }
+    .cat-badge:hover { filter: brightness(1.15); }
+    button { cursor: pointer; border: none; font-family: inherit; }
+    .tab-btn {
+      background: transparent;
+      color: #94a3b8;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { background: #1e293b; color: #e2e8f0; }
+    .tab-btn.active { background: #1e40af; color: #fff; }
+    .card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .card-sm {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .upload-zone {
+      border: 2px dashed #334155;
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      background: #111827;
+      position: relative;
+    }
+    .upload-zone:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.06); }
+    .upload-zone.loaded { border-style: solid; }
+    .upload-zone.drag { border-color: #60a5fa; background: rgba(59, 130, 246, 0.1); }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .progress-bar-wrap { background: #1e293b; border-radius: 999px; height: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+    .tx-row { transition: background 0.15s; }
+    .tx-row:hover { background: #1e293b; }
+    .insight-card {
+      background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .insight-card:hover { transform: translateY(-2px); border-color: #334155; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media (max-width: 1100px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+    .stat-card {
+      background: #111827;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 20px 24px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 16px;
+      letter-spacing: -0.01em;
+    }
+    .text-xs { font-size: 12px; }
+    .text-sm { font-size: 14px; }
+    .text-base { font-size: 16px; }
+    .text-lg { font-size: 18px; }
+    .text-xl { font-size: 20px; }
+    .text-2xl { font-size: 24px; }
+    .text-3xl { font-size: 30px; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .text-muted { color: #64748b; }
+    .text-secondary { color: #94a3b8; }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; }
+    .mb-6 { margin-bottom: 24px; }
+    .rounded { border-radius: 8px; }
+    .rounded-full { border-radius: 999px; }
+    .w-full { width: 100%; }
+    .overflow-x-auto { overflow-x: auto; }
+    .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    // ─────────────────────────────────────────
+    //  CONSTANTS
+    // ─────────────────────────────────────────
+
+    const CATEGORY_CONFIG = {
+      'Dining & Restaurants':   { icon: '🍽️', color: '#ef4444', bg: 'rgba(239,68,68,0.12)'   },
+      'Groceries':              { icon: '🛒', color: '#22c55e', bg: 'rgba(34,197,94,0.12)'   },
+      'Shopping & Retail':      { icon: '🛍️', color: '#a855f7', bg: 'rgba(168,85,247,0.12)'  },
+      'Travel & Transport':     { icon: '✈️', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)'  },
+      'Health & Medical':       { icon: '🏥', color: '#ec4899', bg: 'rgba(236,72,153,0.12)'  },
+      'Pet Care':               { icon: '🐾', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)'  },
+      'Technology':             { icon: '💻', color: '#06b6d4', bg: 'rgba(6,182,212,0.12)'   },
+      'Home & Garden':          { icon: '🏡', color: '#84cc16', bg: 'rgba(132,204,22,0.12)'  },
+      'Beauty & Wellness':      { icon: '💆', color: '#f97316', bg: 'rgba(249,115,22,0.12)'  },
+      'Entertainment & Sports': { icon: '🎭', color: '#6366f1', bg: 'rgba(99,102,241,0.12)'  },
+      'Golf':                   { icon: '⛳', color: '#16a34a', bg: 'rgba(22,163,74,0.12)'   },
+      'Fitness':                { icon: '🏋️', color: '#f43f5e', bg: 'rgba(244,63,94,0.12)'  },
+      'Dry Cleaning':           { icon: '👔', color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+      'Coffee':                 { icon: '☕', color: '#92400e', bg: 'rgba(146,64,14,0.12)'  },
+      'Wine & Spirits':         { icon: '🍷', color: '#9f1239', bg: 'rgba(159,18,57,0.12)'  },
+      'Insurance':              { icon: '🛡️', color: '#475569', bg: 'rgba(71,85,105,0.12)'  },
+      'Charity & Donations':    { icon: '🎗️', color: '#0d9488', bg: 'rgba(13,148,136,0.12)' },
+      'Flowers & Gifts':        { icon: '💐', color: '#db2777', bg: 'rgba(219,39,119,0.12)'  },
+      'Auto Maintenance':       { icon: '🔧', color: '#b45309', bg: 'rgba(180,83,9,0.12)'    },
+      'Utilities':              { icon: '⚡', color: '#d97706', bg: 'rgba(217,119,6,0.12)'   },
+      'Subscriptions':          { icon: '📱', color: '#14b8a6', bg: 'rgba(20,184,166,0.12)'  },
+      'Fees & Interest':        { icon: '💸', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
+      'Other':                  { icon: '📋', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' },
+    };
+
+    const CARD_CONFIG = {
+      'Amex':       { color: '#2563eb', label: 'American Express', short: 'Amex',   emoji: '🔵' },
+      'Apple Card': { color: '#7c3aed', label: 'Apple Card',       short: 'Apple',  emoji: '🟣' },
+      'Chase':      { color: '#0ea5e9', label: 'Chase',            short: 'Chase',  emoji: '🔷' },
+    };
+
+    const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const MONTH_KEYS = MONTHS_SHORT.map((_, i) => `2025-${String(i+1).padStart(2,'0')}`);
+
+    // Card recommendations per category
+    const CARD_RECS = {
+      'Dining & Restaurants':   { card: 'Amex Gold',               rate: '4x MR points',         note: 'Best card for restaurant spend worldwide' },
+      'Groceries':              { card: 'Amex Gold',               rate: '4x MR (up to $25k/yr)',note: 'Or Amex Blue Cash Preferred: 6% cash back (up to $6k/yr)' },
+      'Shopping & Retail':      { card: 'Chase Sapphire Preferred', rate: '3x on online shopping',note: 'Or Citi Double Cash for flat 2% everywhere' },
+      'Travel & Transport':     { card: 'Chase Sapphire Reserve',  rate: '3x travel points',     note: '$300 annual travel credit offsets most of the $550 fee' },
+      'Health & Medical':       { card: 'Citi Double Cash',        rate: '2% everywhere',        note: 'No card offers a health-specific bonus; maximize flat rate' },
+      'Pet Care':               { card: 'Citi Double Cash',        rate: '2% everywhere',        note: 'No specific pet bonus exists; Chase Amazon card for pet supplies online' },
+      'Technology':             { card: 'Apple Card',              rate: '3% at Apple',          note: '2% back with Apple Pay anywhere else' },
+      'Home & Garden':          { card: 'Citi Double Cash',        rate: '2% everywhere',        note: 'Chase Freedom Flex sometimes offers 5% on home improvement retailers' },
+      'Beauty & Wellness':      { card: 'Citi Double Cash',        rate: '2% everywhere',        note: 'Chase Sapphire Reserve: spa counts as travel occasionally' },
+      'Entertainment & Sports': { card: 'Amex Gold',              rate: '4x at dining venues',  note: 'Many venues qualify as restaurants; verify eligibility' },
+      'Golf':                   { card: 'Citi Double Cash',        rate: '2% everywhere',        note: 'No card targets golf specifically; Amex Platinum includes Centurion/GOLFNOW perks at select clubs' },
+      'Fitness':                { card: 'Chase Freedom Flex',      rate: '5% (rotating category)',note: 'Gyms/fitness clubs appear in Chase Freedom Flex rotating quarters; otherwise Citi Double Cash at 2%' },
+      'Dry Cleaning':           { card: 'Citi Double Cash',        rate: '2% everywhere',        note: 'No card offers a dry cleaning bonus; maximize with a flat 2% card' },
+      'Coffee':                 { card: 'Amex Gold',               rate: '4x at restaurants',    note: 'Most coffee shops (Starbucks, Blue Bottle, etc.) code as restaurants and earn 4x MR' },
+      'Wine & Spirits':         { card: 'Amex Gold',               rate: '4x at restaurants',    note: 'Wine bars/shops often code as restaurants; liquor stores use Citi Double Cash at 2%' },
+      'Insurance':              { card: 'Citi Double Cash',        rate: '2% everywhere',        note: 'No card rewards insurance payments; use a flat-rate 2% card to minimize opportunity cost' },
+      'Charity & Donations':    { card: 'Amex Platinum',           rate: 'Amex charitable match', note: 'Amex Membership Rewards offers Give Back programs; some cards double matching on donations' },
+      'Flowers & Gifts':        { card: 'Amex Gold',               rate: '4x at select florists', note: 'Many florists code as grocery/food; Amex Gold earns 4x. Chase Sapphire earns 3x on some gift purchases.' },
+      'Auto Maintenance':       { card: 'Citi Double Cash',        rate: '2% everywhere',         note: 'No card targets auto maintenance; use a flat 2% card. Chase Freedom Flex occasionally includes auto dealers in 5% quarters.' },
+      'Utilities':              { card: 'Chase Freedom Flex',      rate: '5% (rotating category)',note: 'Utilities are a recurring Chase Freedom Flex 5% quarter; otherwise Citi Double Cash at 2%' },
+      'Subscriptions':          { card: 'Amex Blue Cash Preferred', rate: '6% on US streaming',  note: '$7.99/mo fee; breaks even with ~$133/yr streaming spend' },
+      'Fees & Interest':        { card: 'N/A — Eliminate these!',  rate: '—',                   note: 'Pay balance in full monthly. Consider a 0% APR balance transfer card.' },
+    };
+
+    // ─────────────────────────────────────────
+    //  CSV PARSING
+    // ─────────────────────────────────────────
+
+    function parseCSVRow(line) {
+      const result = [];
+      let field = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i+1] === '"') { field += '"'; i++; }
+          else inQuotes = !inQuotes;
+        } else if (ch === ',' && !inQuotes) {
+          result.push(field.trim());
+          field = '';
+        } else {
+          field += ch;
+        }
+      }
+      result.push(field.trim());
+      return result;
+    }
+
+    function decodeHTML(str) {
+      return (str || '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+    }
+
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return null;
+      const [m, d, y] = parts;
+      if (y !== '2025') return null;
+      return { year: y, month: String(m).padStart(2,'0'), day: String(d).padStart(2,'0'),
+               monthKey: `2025-${String(m).padStart(2,'0')}`,
+               dateStr: `2025-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}` };
+    }
+
+    function detectCard(headerLine) {
+      const h = headerLine.toLowerCase();
+      if (h.includes('card member') && h.includes('account #')) return 'amex';
+      if (h.includes('clearing date') && h.includes('purchased by')) return 'apple';
+      if (h.includes('post date') && h.includes('memo')) return 'chase';
+      return null;
+    }
+
+    function parseAmex(text) {
+      const lines = text.trim().split('\n');
+      const txs = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = parseCSVRow(lines[i]);
+        if (cols.length < 5) continue;
+        const [dateRaw, description, cardMember, , amountStr] = cols;
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount) || amount <= 0) continue; // negative = payment
+        const desc = description.trim();
+        if (/online payment|payment.*thank/i.test(desc)) continue;
+        const dt = parseDate(dateRaw.trim());
+        if (!dt) continue;
+        const holder = /ashleigh/i.test(cardMember) ? 'Ashleigh' : 'Jonathan';
+        txs.push({ id: `amex-${i}`, ...dt, description: desc, merchant: desc,
+                   amount, card: 'Amex', cardHolder: holder, originalCategory: null });
+      }
+      return txs;
+    }
+
+    function parseApple(text) {
+      const lines = text.trim().split('\n');
+      const txs = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = parseCSVRow(lines[i]);
+        if (cols.length < 7) continue;
+        const [txDate, , description, merchant, category, type, amountStr, purchasedBy] = cols;
+        if (type === 'Payment') continue;
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount) || amount <= 0) continue;
+        const dt = parseDate(txDate.trim());
+        if (!dt) continue;
+        const holder = /ashleigh/i.test(purchasedBy || '') ? 'Ashleigh' : 'Jonathan';
+        txs.push({ id: `apple-${i}`, ...dt,
+                   description: description.trim(), merchant: merchant.trim(),
+                   amount, card: 'Apple Card', cardHolder: holder,
+                   originalCategory: category.trim() });
+      }
+      return txs;
+    }
+
+    function parseChase(text) {
+      const lines = text.trim().split('\n');
+      const txs = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = parseCSVRow(lines[i]);
+        if (cols.length < 6) continue;
+        const [txDate, , description, category, type, amountStr] = cols;
+        if (type === 'Payment') continue;
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount) || amount >= 0) continue; // positive = credit/cashback
+        const dt = parseDate(txDate.trim());
+        if (!dt) continue;
+        const desc = decodeHTML(description.trim());
+        const cat  = decodeHTML(category.trim());
+        txs.push({ id: `chase-${i}`, ...dt,
+                   description: desc, merchant: desc,
+                   amount: Math.abs(amount), card: 'Chase', cardHolder: 'Jonathan',
+                   originalCategory: cat });
+      }
+      return txs;
+    }
+
+    function parseFile(text) {
+      const firstLine = text.trim().split('\n')[0] || '';
+      const ct = detectCard(firstLine);
+      if (ct === 'amex')  return { card: 'Amex',       txs: parseAmex(text) };
+      if (ct === 'apple') return { card: 'Apple Card', txs: parseApple(text) };
+      if (ct === 'chase') return { card: 'Chase',      txs: parseChase(text) };
+      return null;
+    }
+
+    // ─────────────────────────────────────────
+    //  CATEGORIZATION
+    // ─────────────────────────────────────────
+
+    const RULES = [
+      { cat: 'Fees & Interest',
+        test: t => /interest charge|purchase interest|annual fee|late fee/i.test(t.description)
+              || /fees & adjustments/i.test(t.originalCategory || '') },
+
+      { cat: 'Insurance',
+        test: t => {
+          const d = t.description;
+          return /\binsurance\b|\binsur\b/i.test(d)
+            || /geico|allstate|state farm|progressive|travelers ins|nationwide ins/i.test(d)
+            || /liberty mutual|farmers ins|usaa|amica|nationwide prop/i.test(d)
+            || /new york life|met life|metlife|principal ins|guardian ins/i.test(d)
+            || /health ins|dental ins|vision ins|life ins|auto ins|home ins|renters ins/i.test(d)
+            || /\bcoverage\b.*premium|\bpremium\b.*\bcoverage\b/i.test(d);
+        }},
+
+      { cat: 'Pet Care',
+        test: t => /nationwide pet|thefarmersdog|timetopet|animal hosp|petco|petsmart|olde towne animal/i.test(t.description) },
+
+      { cat: 'Technology',
+        test: t => /apple store|apple online store/i.test(t.description)
+              || (/tesla/i.test(t.description) && /reservation/i.test(t.description))
+              || (/best buy/i.test(t.description)) },
+
+      { cat: 'Utilities',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'utilities'
+            || /con edison|pseg|national grid|eversource/i.test(d)
+            || /\bverizon\b|\bat&t\b|\bt-mobile\b/i.test(d)
+            || /comcast|spectrum|optimum|xfinity/i.test(d)
+            || /electric.*bill|gas.*bill|water.*bill|utility/i.test(d)
+            || /water authority|gas company|electric company/i.test(d);
+        }},
+
+      { cat: 'Subscriptions',
+        test: t => /siriusxm|sxm /i.test(t.description)
+              || /apple\.com\/bill|apple\.com bill/i.test(t.description)
+              || /apple services/i.test(t.merchant || t.description)
+              || /passny rebill|rebill/i.test(t.description)
+              || /netflix|spotify|hulu|disney\+|hbo max/i.test(t.description) },
+
+      { cat: 'Travel & Transport',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'travel' || oc === 'transportation'
+            || /\blyft\b|citi bike|mta\*|nyct paygo/i.test(d)
+            || /\buber\b/i.test(d)
+            || /curb svc.*taxi|taxi/i.test(d)
+            || /tesla supercharger/i.test(d)
+            || /core car|car service/i.test(d)
+            || /cumberland farms/i.test(d)
+            || /jetblue|delta|united air|american air|southwest air/i.test(d)
+            || /hotel|marriott|hilton|hyatt/i.test(d)
+            || /passny\b/i.test(d)
+            || /parking garage|parking/i.test(d)
+            || /fairmont|rosewood|barons cove resort/i.test(d);
+        }},
+
+      { cat: 'Health & Medical',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'medical' || oc === 'health & wellness'
+            || /northwell|mskcc|sloan ket|sloan-kettering/i.test(d)
+            || /vtg\*manhattan|propay\*manhattan/i.test(d)
+            || /cvs\/pharmacy|duane reade/i.test(d)
+            || /dermatology|dentist|dental|orthodont/i.test(d)
+            || /plaza m spa|skin solutions/i.test(d);
+        }},
+
+      { cat: 'Golf',
+        test: t => /\bgolf\b|bridge golf|golf de mayakoba|usgahandicap|thegrint|golfnow/i.test(t.description) },
+
+      { cat: 'Fitness',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'fitness' || oc === 'sports & fitness'
+            || /\bgym\b|\bfitness\b/i.test(d)
+            || /equinox|soulcycle|soul cycle|orangetheory|orange theory/i.test(d)
+            || /planet fitness|crunch fitness|lifetime fitness|life time/i.test(d)
+            || /wodify|crossfit|barry.*boot|f45|solidcore/i.test(d)
+            || /peloton|mirror fitness/i.test(d)
+            || /ymca\b|ywca\b/i.test(d)
+            || /pilates|yoga\b|barre\b|cycling studio/i.test(d)
+            || /swim.*club|tennis.*club|athletic.*club/i.test(d);
+        }},
+
+      { cat: 'Entertainment & Sports',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'entertainment'
+            || /southampton playhouse|playhouse|theater|theatre|concert/i.test(d)
+            || /jazz club/i.test(d)
+            || /dick.*sport|dick.*sporting/i.test(d);
+        }},
+
+      { cat: 'Dry Cleaning',
+        test: t => {
+          const d = t.description;
+          return /dry clean|dryclean|laundry|laundr|cleaners\b/i.test(d)
+            || /pressed|presser|valet.*clean|clean.*valet/i.test(d)
+            || /martinizing|jeeves|madame paulette/i.test(d)
+            || /wash.*fold|fluff.*fold/i.test(d);
+        }},
+
+      { cat: 'Beauty & Wellness',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'personal'
+            || /blvd.*art of the b|art of the b/i.test(d)
+            || /modern chemist/i.test(d)
+            || /salon|spa\b|nail spa|bestie nail/i.test(d)
+            || /massage|hair studio|blow dry/i.test(d);
+        }},
+
+      { cat: 'Home & Garden',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'home'
+            || /fowlers garden|halsey farm.*nursery|nursery/i.test(d)
+            || /zen home|fsp\*zen/i.test(d)
+            || /john derian/i.test(d)
+            || /sq \*outlet/i.test(d)
+            || /hardware|home depot|lowe.*home/i.test(d);
+        }},
+
+      { cat: 'Coffee',
+        test: t => {
+          const d = t.description;
+          return /\bcoffee\b/i.test(d)
+            || /starbucks|dunkin|blue bottle|for five|le cafe coffee/i.test(d)
+            || /gregorys coffee|joe coffee|la colombe|think coffee/i.test(d)
+            || /sq \*variety coffee|sq \*le cafe/i.test(d)
+            || /\bcafe\b.*roast|roast.*\bcafe\b/i.test(d)
+            || /espresso bar|coffee bar|coffee house|coffeehouse/i.test(d);
+        }},
+
+      { cat: 'Wine & Spirits',
+        test: t => {
+          const d = t.description;
+          return /wine\b|wines\b|\bwinery\b|\bvineyards?\b/i.test(d)
+            || /\bspirits\b|\bliquor\b|\bliqueur\b|\bwhiskey\b|\bwhisky\b|\bbourbon\b/i.test(d)
+            || /\bvodka\b|\bgin\b.*\bshop\b|\brum\b.*\bshop\b/i.test(d)
+            || /september wines|cheese shoppe.*wine|wine.*cheese shoppe/i.test(d)
+            || /total wine|wine library|astor wines|sherry.*lehmann/i.test(d)
+            || /\bbrewery\b|\bcraftbeer\b|craft beer.*shop/i.test(d);
+        }},
+
+      { cat: 'Charity & Donations',
+        test: t => {
+          const d = t.description;
+          return /\bdonation\b|\bdonat\b|\bcharity\b|\bcharitable\b/i.test(d)
+            || /\bnonprofit\b|\bnon-profit\b|\bngo\b/i.test(d)
+            || /\bgofundme\b|\bkickstarter\b|\bindiegogo\b/i.test(d)
+            || /red cross|salvation army|united way|goodwill/i.test(d)
+            || /habitat.*humanity|feeding america|st\. jude|doctors without/i.test(d)
+            || /\bgive\b.*fund|\bgiving\b.*fund/i.test(d);
+        }},
+
+      { cat: 'Auto Maintenance',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return /\bauto.*repair\b|\bcar.*repair\b|\bauto.*service\b|\bcar.*service\b/i.test(d)
+            || /\boil.*change\b|\btire\b|\balignment\b|\brbrake\b|\bbrakes\b/i.test(d)
+            || /jiffy lube|valvoline|firestone|midas\b|meineke|pep boys|mavis/i.test(d)
+            || /\bauto.*parts\b|\bcar.*parts\b|autozone|o'reilly auto|napa auto/i.test(d)
+            || /\bdetail.*car\b|\bcar.*detail\b|\bcar.*wash\b|\bauto.*wash\b/i.test(d)
+            || /\binspection.*station\b|\bregistration.*fee\b|\bdmv\b/i.test(d)
+            || /goodyear|bridgestone|michelin.*tire|discount tire/i.test(d)
+            || /\bmechanic\b|\bautomotive\b/i.test(d);
+        }},
+
+      { cat: 'Flowers & Gifts',
+        test: t => {
+          const d = t.description;
+          return /\bflowers?\b|\bflorist\b|\bfloral\b|\bbouquet\b/i.test(d)
+            || /\bflower.*shop\b|\bflower.*delivery\b/i.test(d)
+            || /1-800-flowers|ftd\.com|teleflora|proflowers|bouqs/i.test(d)
+            || /urban stems|farmgirl flowers|fromyouflowers/i.test(d)
+            || /\bgift basket\b|\bgift.*basket\b|\bbasket.*gift\b/i.test(d)
+            || /harry.*david|hickory farms|goldbelly.*gift/i.test(d)
+            || /\bgift.*shop\b|\bgreeting.*card\b/i.test(d)
+            || /hallmark|things remembered/i.test(d);
+        }},
+
+      { cat: 'Dining & Restaurants',
+        test: t => {
+          const d = t.description; const m = t.merchant || ''; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'restaurants' || oc === 'food & drink'
+            || /panera|sweetgreen|toasties|chipotle|pinkberry|potbelly/i.test(d)
+            || /tst\*/i.test(d)
+            || /doordash|dd \*doordash|ubereats|grubhub/i.test(d)
+            || /\bbar\b.*bistro|bistro|trattoria|tavern|brasserie/i.test(d)
+            || /\bpizza\b|\bsushi\b|\bramen\b|\btaco\b/i.test(d)
+            || /wonton king|tutto cafe|proper food|daily provisions|dailyprovisions/i.test(d)
+            || /eataly|eataly caffe/i.test(d)
+            || /allantico|pellegrino.*pizza|bar primi/i.test(d)
+            || /cheese shoppe|sq \*little canal/i.test(d)
+            || /\bdiner\b|\bcafe\b/i.test(d)
+            || /restaurant|food.*bar|delis 48|la fabbrica|sq \*shake shack/i.test(d)
+            || /arlo midtown|barons cove|rosewood cdl|rest fairmont|lessing/i.test(d)
+            || /daniel\b|the jazz club|eh grill|i sodi|sag harbor tavern|lstaurant/i.test(d)
+            || /lsu calissa|estias|a&s.*bridgehampton|round swamp farm/i.test(d);
+        }},
+
+      { cat: 'Groceries',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'grocery' || oc === 'groceries'
+            || /citarella|stop & shop|stop &amp; shop/i.test(d)
+            || /whole foods|trader joe/i.test(d)
+            || /peconic prime|teds north|halsey farm/i.test(d)
+            || /olipop/i.test(d)
+            || /farm.*forage market|farm & forage/i.test(d)
+            || /delis 48/i.test(d);
+        }},
+
+      { cat: 'Shopping & Retail',
+        test: t => {
+          const d = t.description; const oc = (t.originalCategory || '').toLowerCase();
+          return oc === 'shopping'
+            || /amazon market|amazon\.com/i.test(d)
+            || /hermes|herm.*paris/i.test(d)
+            || /lululemon|kith\.com|sp kith/i.test(d)
+            || /adidas|llbean|ll bean/i.test(d)
+            || /bloomingdale|nordstrom|macy/i.test(d)
+            || /perfumania|reigning champ|sp reigning/i.test(d)
+            || /rag.*bone|abercrombie/i.test(d)
+            || /nike\.com|goodr sunglasses/i.test(d)
+            || /fiasconaro/i.test(d);
+        }},
+    ];
+
+    function categorize(tx) {
+      for (const rule of RULES) {
+        if (rule.test(tx)) return rule.cat;
+      }
+      return 'Other';
+    }
+
+    // ─────────────────────────────────────────
+    //  UTILITIES
+    // ─────────────────────────────────────────
+
+    const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+    const fmtD = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+    const fmtK = (n) => n >= 1000 ? `$${(n/1000).toFixed(1)}k` : fmt(n);
+
+    function cleanMerchant(name) {
+      return (name || '')
+        .replace(/^(TST\*|SP |SQ \*|AplPay |FSP\*|DD \*|GLF\*|VTG\*)/i, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+        .split(' ')
+        .map((w,i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase())
+        .join(' ')
+        .substring(0, 38);
+    }
+
+    // ─────────────────────────────────────────
+    //  CHART COMPONENTS
+    // ─────────────────────────────────────────
+
+    function DonutChart({ data, size = 220 }) {
+      const ref = useRef();
+      const chartInst = useRef();
+      useEffect(() => {
+        if (!ref.current || !data.length) return;
+        if (chartInst.current) chartInst.current.destroy();
+        const ctx = ref.current.getContext('2d');
+        chartInst.current = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: data.map(d => d.category),
+            datasets: [{
+              data: data.map(d => d.total),
+              backgroundColor: data.map(d => d._overflow ? '#475569' : (CATEGORY_CONFIG[d.category]?.color || '#94a3b8')),
+              borderWidth: 2,
+              borderColor: '#0a0f1e',
+              hoverBorderColor: '#fff',
+              hoverBorderWidth: 2,
+            }]
+          },
+          options: {
+            responsive: false,
+            cutout: '68%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1e293b',
+                borderColor: '#334155',
+                borderWidth: 1,
+                titleColor: '#f1f5f9',
+                bodyColor: '#94a3b8',
+                padding: 12,
+                callbacks: {
+                  label: ctx => ` ${fmtD(ctx.raw)}  (${((ctx.raw / data.reduce((s,d)=>s+d.total,0))*100).toFixed(1)}%)`,
+                }
+              }
+            },
+            animation: { animateRotate: true, duration: 600 }
+          }
+        });
+        return () => { if (chartInst.current) chartInst.current.destroy(); };
+      }, [JSON.stringify(data)]);
+      return <canvas ref={ref} width={size} height={size} style={{ display: 'block' }} />;
+    }
+
+    function MonthlyBarChart({ monthlyByCard }) {
+      const ref = useRef();
+      const chartInst = useRef();
+      useEffect(() => {
+        if (!ref.current) return;
+        if (chartInst.current) chartInst.current.destroy();
+        const ctx = ref.current.getContext('2d');
+        chartInst.current = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: MONTHS_SHORT,
+            datasets: [
+              { label: 'Amex',       data: MONTH_KEYS.map(m => monthlyByCard['Amex']?.[m] || 0),       backgroundColor: 'rgba(37,99,235,0.85)',  borderRadius: 4, borderSkipped: false },
+              { label: 'Apple Card', data: MONTH_KEYS.map(m => monthlyByCard['Apple Card']?.[m] || 0), backgroundColor: 'rgba(124,58,237,0.85)', borderRadius: 4, borderSkipped: false },
+              { label: 'Chase',      data: MONTH_KEYS.map(m => monthlyByCard['Chase']?.[m] || 0),      backgroundColor: 'rgba(14,165,233,0.85)', borderRadius: 4, borderSkipped: false },
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 12 } } },
+              y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' },
+                   ticks: { color: '#64748b', font: { size: 12 }, callback: v => fmtK(v) },
+                   border: { display: false } }
+            },
+            plugins: {
+              legend: { labels: { color: '#94a3b8', font: { size: 12 }, boxWidth: 12, boxHeight: 12 } },
+              tooltip: {
+                backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1,
+                titleColor: '#f1f5f9', bodyColor: '#94a3b8', padding: 12,
+                mode: 'index', intersect: false,
+                callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtD(ctx.raw)}` }
+              }
+            },
+            animation: { duration: 500 }
+          }
+        });
+        return () => { if (chartInst.current) chartInst.current.destroy(); };
+      }, [JSON.stringify(monthlyByCard)]);
+      return <div style={{ height: 280 }}><canvas ref={ref} /></div>;
+    }
+
+    function HBarChart({ items }) {
+      const ref = useRef();
+      const chartInst = useRef();
+      useEffect(() => {
+        if (!ref.current || !items.length) return;
+        if (chartInst.current) chartInst.current.destroy();
+        const top = items.slice(0, 12);
+        const ctx = ref.current.getContext('2d');
+        chartInst.current = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: top.map(m => m.name.length > 22 ? m.name.substring(0,22)+'…' : m.name),
+            datasets: [{
+              data: top.map(m => m.total),
+              backgroundColor: top.map(m => CATEGORY_CONFIG[m.category]?.color || '#94a3b8'),
+              borderRadius: 6, borderSkipped: false,
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 12 }, callback: v => fmtK(v) }, border: { display: false } },
+              y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 12 } } }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1,
+                titleColor: '#f1f5f9', bodyColor: '#94a3b8', padding: 12,
+                callbacks: { label: ctx => ` ${fmtD(ctx.raw)} (${top[ctx.dataIndex].count} transactions)` }
+              }
+            },
+            animation: { duration: 500 }
+          }
+        });
+        return () => { if (chartInst.current) chartInst.current.destroy(); };
+      }, [JSON.stringify(items)]);
+      return <div style={{ height: Math.max(240, items.slice(0,12).length * 32 + 40) }}><canvas ref={ref} /></div>;
+    }
+
+    // ─────────────────────────────────────────
+    //  UPLOAD SCREEN
+    // ─────────────────────────────────────────
+
+    function UploadZone({ label, color, loaded, filename, onFile }) {
+      const inputRef = useRef();
+      const [drag, setDrag] = useState(false);
+      const onDrop = e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) onFile(f); };
+      return (
+        <div className={`upload-zone${loaded ? ' loaded' : ''}${drag ? ' drag' : ''}`}
+          style={{ borderColor: loaded ? color : drag ? '#3b82f6' : undefined }}
+          onDragOver={e => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={onDrop}
+          onClick={() => inputRef.current.click()}>
+          <input ref={inputRef} type="file" accept=".csv" onChange={e => { const f = e.target.files[0]; if (f) onFile(f); }} />
+          <div style={{ fontSize: 40, marginBottom: 12 }}>{loaded ? '✅' : '📂'}</div>
+          <div style={{ fontWeight: 700, fontSize: 18, color: loaded ? color : '#e2e8f0', marginBottom: 6 }}>{label}</div>
+          {loaded
+            ? <div style={{ color: '#94a3b8', fontSize: 13 }}>✓ {filename}</div>
+            : <div style={{ color: '#475569', fontSize: 13 }}>Drop CSV file here or click to browse</div>}
+          {!loaded && (
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+              <span style={{ background: color + '22', color, padding: '4px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                {label} CSV
+              </span>
+            </div>)}
+        </div>
+      );
+    }
+
+    function UploadScreen({ onFile, loaded }) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ fontSize: 56, marginBottom: 16 }}>💳</div>
+            <h1 style={{ fontSize: 36, fontWeight: 800, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6,#06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 12 }}>
+              2025 Spending Analysis
+            </h1>
+            <p style={{ color: '#94a3b8', fontSize: 16, maxWidth: 460, margin: '0 auto' }}>
+              Upload your Amex, Apple Card, and Chase CSV exports to get a full picture of your household spending with smart optimization tips.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, width: '100%', maxWidth: 880, marginBottom: 32 }}>
+            <UploadZone label="American Express" color="#2563eb" loaded={loaded.amex}   filename={loaded.amexName}  onFile={onFile} />
+            <UploadZone label="Apple Card"        color="#7c3aed" loaded={loaded.apple}  filename={loaded.appleName} onFile={onFile} />
+            <UploadZone label="Chase"             color="#0ea5e9" loaded={loaded.chase}  filename={loaded.chaseName} onFile={onFile} />
+          </div>
+          {(loaded.amex || loaded.apple || loaded.chase) && (
+            <p style={{ color: '#64748b', fontSize: 13 }}>Drop any additional CSVs — the app auto-detects the card type.</p>
+          )}
+          <div style={{ marginTop: 48, color: '#334155', fontSize: 12, textAlign: 'center', maxWidth: 440 }}>
+            🔒 All processing happens locally in your browser — no data is uploaded or shared.
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  STAT CARDS
+    // ─────────────────────────────────────────
+
+    function StatCard({ icon, label, value, sub, color = '#3b82f6' }) {
+      return (
+        <div className="stat-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ color: '#64748b', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{label}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.02em' }}>{value}</div>
+              {sub && <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>{sub}</div>}
+            </div>
+            <div style={{ fontSize: 28, background: color + '18', borderRadius: 12, width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  OVERVIEW TAB
+    // ─────────────────────────────────────────
+
+    function OverviewTab({ transactions, categoryData, monthlyByCard, cardData, cardHolderData }) {
+      const total = transactions.reduce((s,t) => s+t.amount, 0);
+      const txCount = transactions.length;
+      const topCat = categoryData[0];
+      const peakMonth = useMemo(() => {
+        const byM = {};
+        transactions.forEach(t => { byM[t.monthKey] = (byM[t.monthKey]||0) + t.amount; });
+        const sorted = Object.entries(byM).sort((a,b)=>b[1]-a[1]);
+        if (!sorted.length) return null;
+        const [key, val] = sorted[0];
+        const idx = MONTH_KEYS.indexOf(key);
+        return { label: MONTHS_SHORT[idx] || key, val };
+      }, [transactions]);
+
+      const donutData = useMemo(() => {
+        const top10 = categoryData.slice(0, 10);
+        const restItems = categoryData.slice(10);
+        const rest = restItems.reduce((s,d)=>s+d.total, 0);
+        if (rest > 0) return [...top10, { category: '+ ' + restItems.length + ' more categories', total: rest, _overflow: true }];
+        return top10;
+      }, [categoryData]);
+
+      return (
+        <div>
+          {/* Stats row */}
+          <div className="grid-4" style={{ marginBottom: 24 }}>
+            <StatCard icon="💰" label="Total Spend" value={fmt(total)} sub={`${txCount} transactions`} color="#3b82f6" />
+            <StatCard icon="📊" label="Monthly Avg" value={fmt(total/12)} sub="Across all cards" color="#8b5cf6" />
+            <StatCard icon="🏆" label="Top Category" value={topCat?.category || '—'} sub={topCat ? fmt(topCat.total) : ''} color="#f59e0b" />
+            <StatCard icon="📅" label="Peak Month" value={peakMonth?.label || '—'} sub={peakMonth ? fmt(peakMonth.val) : ''} color="#ef4444" />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 20, marginBottom: 24, alignItems: 'start' }}>
+            {/* Donut */}
+            <div className="card">
+              <div className="section-title">Spend by Category</div>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <DonutChart data={donutData} size={200} />
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                    <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>TOTAL</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.2 }}>{fmt(total)}</div>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {donutData.map(d => {
+                  const cfg = d._overflow ? { color: '#475569', icon: '…' } : (CATEGORY_CONFIG[d.category] || CATEGORY_CONFIG['Other']);
+                  const pct = ((d.total/total)*100).toFixed(1);
+                  return (
+                    <div key={d.category} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 3, background: cfg.color, flexShrink: 0 }} />
+                      <div style={{ flex: 1, fontSize: 12, color: d._overflow ? '#475569' : '#94a3b8', minWidth: 0 }} className="truncate">{cfg.icon} {d.category}</div>
+                      <div style={{ fontSize: 12, color: '#64748b', flexShrink: 0 }}>{pct}%</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', flexShrink: 0, width: 72, textAlign: 'right' }}>{fmt(d.total)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Monthly chart */}
+            <div className="card">
+              <div className="section-title">Monthly Spend by Card</div>
+              <MonthlyBarChart monthlyByCard={monthlyByCard} />
+              {/* Card totals */}
+              <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
+                {Object.entries(cardData).map(([card, total]) => {
+                  const cfg = CARD_CONFIG[card];
+                  return (
+                    <div key={card} style={{ flex: 1, minWidth: 120, background: cfg.color + '15', border: `1px solid ${cfg.color}30`, borderRadius: 10, padding: '12px 16px' }}>
+                      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>{cfg.emoji} {cfg.label}</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: cfg.color }}>{fmt(total)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Cardholder split */}
+          {Object.keys(cardHolderData).length > 1 && (
+            <div className="card">
+              <div className="section-title">Spending by Cardholder</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                {Object.entries(cardHolderData).sort((a,b)=>b[1]-a[1]).map(([holder, amt]) => {
+                  const pct = ((amt/total)*100).toFixed(1);
+                  const color = holder === 'Jonathan' ? '#3b82f6' : '#ec4899';
+                  return (
+                    <div key={holder} style={{ background: '#0f172a', borderRadius: 12, padding: 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <span style={{ fontWeight: 700, fontSize: 16 }}>{holder}</span>
+                        <span style={{ color, fontWeight: 800, fontSize: 20 }}>{fmt(amt)}</span>
+                      </div>
+                      <div className="progress-bar-wrap">
+                        <div className="progress-bar" style={{ width: `${pct}%`, background: color }} />
+                      </div>
+                      <div style={{ color: '#64748b', fontSize: 13, marginTop: 6 }}>{pct}% of household spend</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  CATEGORIES TAB
+    // ─────────────────────────────────────────
+
+    function CategoriesTab({ categoryData, transactions }) {
+      const total = transactions.reduce((s,t) => s+t.amount, 0);
+      return (
+        <div>
+          <div className="grid-2">
+            {categoryData.map(({ category, total: catTotal }) => {
+              const cfg = CATEGORY_CONFIG[category] || CATEGORY_CONFIG['Other'];
+              const pct = ((catTotal/total)*100).toFixed(1);
+              const catTxs = transactions.filter(t => t.category === category);
+              const avgTx = catTxs.length ? catTxs.reduce((s,t)=>s+t.amount,0)/catTxs.length : 0;
+              const rec = CARD_RECS[category];
+              return (
+                <div key={category} className="card">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                    <div style={{ fontSize: 28, background: cfg.bg, borderRadius: 12, width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {cfg.icon}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: '#f1f5f9' }}>{category}</div>
+                      <div style={{ color: '#64748b', fontSize: 13 }}>{catTxs.length} transactions · avg {fmtD(avgTx)}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontWeight: 800, fontSize: 22, color: cfg.color }}>{fmt(catTotal)}</div>
+                      <div style={{ color: '#64748b', fontSize: 13 }}>{pct}% of total</div>
+                    </div>
+                  </div>
+                  <div className="progress-bar-wrap" style={{ marginBottom: 12 }}>
+                    <div className="progress-bar" style={{ width: `${pct}%`, background: cfg.color }} />
+                  </div>
+                  {rec && (
+                    <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
+                      <span style={{ color: '#22c55e', fontWeight: 600 }}>💡 Best card: </span>
+                      <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{rec.card}</span>
+                      <span style={{ color: '#64748b' }}> · {rec.rate}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  TRENDS TAB
+    // ─────────────────────────────────────────
+
+    function TrendsTab({ transactions, monthlyByCard, topMerchants }) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="card">
+            <div className="section-title">Monthly Spending Trend</div>
+            <MonthlyBarChart monthlyByCard={monthlyByCard} />
+            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
+              {MONTHS_SHORT.map((mo, idx) => {
+                const key = MONTH_KEYS[idx];
+                const total = Object.values(monthlyByCard).reduce((s, byM) => s + (byM[key]||0), 0);
+                return (
+                  <div key={mo} style={{ textAlign: 'center', padding: '8px 4px', background: '#0f172a', borderRadius: 8 }}>
+                    <div style={{ color: '#64748b', fontSize: 12, marginBottom: 2 }}>{mo}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: total > 0 ? '#e2e8f0' : '#334155' }}>
+                      {total > 0 ? fmtK(total) : '—'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="card">
+            <div className="section-title">Top Merchants by Spend</div>
+            <HBarChart items={topMerchants} />
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  CATEGORY EDITOR CELL
+    // ─────────────────────────────────────────
+
+    function CategoryCell({ tx, overrides, onOverride }) {
+      const [editing, setEditing] = useState(false);
+      const mk = tx._merchantKey || cleanMerchant(tx.merchant || tx.description);
+      const isLearned = overrides[mk] !== undefined;
+      const cfg = CATEGORY_CONFIG[tx.category] || CATEGORY_CONFIG['Other'];
+      const autoLabel = tx._autoCategory && tx._autoCategory !== tx.category
+        ? `Learned rule · was: ${tx._autoCategory} · Click to change`
+        : 'Click to reassign category';
+
+      if (editing) {
+        return (
+          <select
+            className="cat-select"
+            autoFocus
+            value={tx.category}
+            onChange={e => { onOverride(tx, e.target.value); setEditing(false); }}
+            onBlur={() => setEditing(false)}
+          >
+            {Object.keys(CATEGORY_CONFIG).sort().map(cat => {
+              const c = CATEGORY_CONFIG[cat];
+              return <option key={cat} value={cat}>{c.icon} {cat}</option>;
+            })}
+          </select>
+        );
+      }
+
+      return (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span
+            className="cat-badge"
+            onClick={() => setEditing(true)}
+            title={autoLabel}
+            style={{
+              background: cfg.bg,
+              color: cfg.color,
+              border: `1px solid ${isLearned ? cfg.color + '99' : 'transparent'}`,
+            }}
+          >
+            {cfg.icon} {tx.category}{isLearned && ' 🧠'}
+          </span>
+          {isLearned && (
+            <button
+              onClick={e => { e.stopPropagation(); onOverride(tx, undefined); }}
+              title={`Remove learned rule · revert to: ${tx._autoCategory || 'auto'}`}
+              style={{ background: 'none', color: '#475569', fontSize: 13, lineHeight: 1, padding: '0 3px', borderRadius: 4, transition: 'color 0.15s' }}
+              onMouseEnter={e => e.target.style.color='#ef4444'}
+              onMouseLeave={e => e.target.style.color='#475569'}
+            >✕</button>
+          )}
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  TRANSACTIONS TAB
+    // ─────────────────────────────────────────
+
+    function TransactionsTab({ transactions, overrides, onOverride, onResetAll }) {
+      const [search, setSearch] = useState('');
+      const [cardF, setCardF] = useState('all');
+      const [catF, setCatF] = useState('all');
+      const [sortBy, setSortBy] = useState({ col: 'date', dir: 'desc' });
+      const toggleSort = (col) => setSortBy(prev =>
+        prev.col === col ? { col, dir: prev.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: col === 'amount' ? 'desc' : 'desc' }
+      );
+      const [modifiedOnly, setModifiedOnly] = useState(false);
+      const [page, setPage] = useState(1);
+      const PAGE_SIZE = 50;
+
+      const overrideCount = Object.keys(overrides).length;
+
+      const filtered = useMemo(() => {
+        let txs = transactions.filter(t => {
+          if (cardF !== 'all' && t.card !== cardF) return false;
+          if (catF !== 'all' && t.category !== catF) return false;
+          if (modifiedOnly && overrides[t._merchantKey] === undefined) return false;
+          if (search) {
+            const q = search.toLowerCase();
+            if (!t.description.toLowerCase().includes(q) && !(t.merchant||'').toLowerCase().includes(q)) return false;
+          }
+          return true;
+        });
+        if (sortBy.col === 'amount') txs = [...txs].sort((a,b) => sortBy.dir === 'desc' ? b.amount - a.amount : a.amount - b.amount);
+        else txs = [...txs].sort((a,b) => sortBy.dir === 'desc' ? b.dateStr.localeCompare(a.dateStr) : a.dateStr.localeCompare(b.dateStr));
+        return txs;
+      }, [transactions, search, cardF, catF, sortBy, modifiedOnly, overrides]);
+
+      const pages = Math.ceil(filtered.length / PAGE_SIZE);
+      const pageTxs = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+      const pageTotal = filtered.reduce((s,t)=>s+t.amount,0);
+
+      useEffect(() => { setPage(1); }, [search, cardF, catF, sortBy.col, sortBy.dir, modifiedOnly]);
+
+      const cards = [...new Set(transactions.map(t=>t.card))];
+      const cats  = [...new Set(transactions.map(t=>t.category))].sort();
+
+      return (
+        <div className="card">
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input type="search" placeholder="Search transactions…" value={search} onChange={e=>setSearch(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
+            <select value={cardF} onChange={e=>setCardF(e.target.value)}>
+              <option value="all">All Cards</option>
+              {cards.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select value={catF} onChange={e=>setCatF(e.target.value)}>
+              <option value="all">All Categories</option>
+              {cats.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+
+          {/* Status + override controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+            <span style={{ color: '#64748b', fontSize: 13 }}>
+              {filtered.length} transactions · {fmt(pageTotal)}
+              {pages > 1 && ` · Page ${page} of ${pages}`}
+            </span>
+            <div style={{ flex: 1 }} />
+            {overrideCount > 0 && (
+              <>
+                <button
+                  onClick={() => setModifiedOnly(v => !v)}
+                  style={{
+                    background: modifiedOnly ? '#1e3a8a' : '#1e293b',
+                    color: modifiedOnly ? '#93c5fd' : '#94a3b8',
+                    padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                    border: `1px solid ${modifiedOnly ? '#3b82f6' : '#334155'}`,
+                  }}>
+                  🧠 {overrideCount} merchant{overrideCount !== 1 ? 's' : ''} learned{modifiedOnly ? ' (showing)' : ''}
+                </button>
+                <button
+                  onClick={() => { if (window.confirm(`Clear all ${overrideCount} learned merchant rules?`)) onResetAll(); }}
+                  style={{ background: '#1e293b', color: '#f87171', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid #334155' }}>
+                  Reset all
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Hint */}
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>✏️</span>
+            <span>Click any <strong style={{ color: '#64748b' }}>category badge</strong> to reassign it. The app <strong style={{ color: '#64748b' }}>learns the rule for that merchant</strong> — every transaction from that merchant updates instantly and the rule persists across sessions. Learned transactions show <strong style={{ color: '#64748b' }}>🧠</strong>.</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table style={{ fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                  {['Date','Description','Card','Category','Amount','Holder'].map(h => {
+                    const sortable = h === 'Date' || h === 'Amount';
+                    const col = h.toLowerCase();
+                    const active = sortBy.col === col;
+                    const arrow = active ? (sortBy.dir === 'desc' ? ' ▼' : ' ▲') : ' ⇅';
+                    return (
+                      <th key={h}
+                        onClick={sortable ? () => toggleSort(col) : undefined}
+                        style={{
+                          padding: '10px 12px', fontWeight: 600, whiteSpace: 'nowrap',
+                          color: active ? '#93c5fd' : '#64748b',
+                          cursor: sortable ? 'pointer' : 'default',
+                          userSelect: 'none',
+                        }}>
+                        {h}{sortable && <span style={{ fontSize: 11, opacity: active ? 1 : 0.4 }}>{arrow}</span>}
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {pageTxs.map(t => {
+                  const cardCfg = CARD_CONFIG[t.card] || {};
+                  return (
+                    <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
+                      <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                      <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
+                      <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</span>
+                      </td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <CategoryCell tx={t} overrides={overrides} onOverride={onOverride} />
+                      </td>
+                      <td style={{ padding: '10px 12px', fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
+                      <td style={{ padding: '10px 12px', color: '#64748b' }}>{t.cardHolder}</td>
+                    </tr>
+                  );
+                })}
+                {!pageTxs.length && (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: '#334155' }}>No transactions match your filters</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {pages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+              <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page===1}
+                style={{ background: '#1e293b', color: '#94a3b8', padding: '8px 16px', borderRadius: 8, fontSize: 13, opacity: page===1 ? 0.4 : 1 }}>← Prev</button>
+              {Array.from({ length: Math.min(7, pages) }, (_, i) => {
+                const pg = page <= 4 ? i+1 : page >= pages-3 ? pages-6+i : page-3+i;
+                if (pg < 1 || pg > pages) return null;
+                return <button key={pg} onClick={() => setPage(pg)}
+                  style={{ background: pg===page ? '#1e40af' : '#1e293b', color: pg===page ? '#fff' : '#94a3b8', padding: '8px 14px', borderRadius: 8, fontSize: 13 }}>{pg}</button>;
+              })}
+              <button onClick={() => setPage(p => Math.min(pages, p+1))} disabled={page===pages}
+                style={{ background: '#1e293b', color: '#94a3b8', padding: '8px 16px', borderRadius: 8, fontSize: 13, opacity: page===pages ? 0.4 : 1 }}>Next →</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  INSIGHTS TAB
+    // ─────────────────────────────────────────
+
+    function InsightCard({ emoji, title, headline, body, tag, tagColor = '#22c55e', alert = false }) {
+      return (
+        <div className="insight-card" style={{ borderLeft: `3px solid ${tagColor}` }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+            <div style={{ fontSize: 28, flexShrink: 0 }}>{emoji}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>{title}</span>
+                {tag && <span style={{ background: tagColor + '22', color: tagColor, padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{tag}</span>}
+              </div>
+              {headline && <div style={{ fontWeight: 700, fontSize: 20, color: tagColor, marginBottom: 6 }}>{headline}</div>}
+              <div style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6 }}>{body}</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function InsightsTab({ transactions, categoryData, topMerchants }) {
+      const total = transactions.reduce((s,t)=>s+t.amount, 0);
+
+      const catMap = useMemo(() => {
+        const m = {};
+        categoryData.forEach(d => { m[d.category] = d.total; });
+        return m;
+      }, [categoryData]);
+
+      // Specific figures
+      const interestFees    = catMap['Fees & Interest'] || 0;
+      const dining          = catMap['Dining & Restaurants'] || 0;
+      const groceries       = catMap['Groceries'] || 0;
+      const shopping        = catMap['Shopping & Retail'] || 0;
+      const travel          = catMap['Travel & Transport'] || 0;
+      const pet             = catMap['Pet Care'] || 0;
+      const subs            = catMap['Subscriptions'] || 0;
+      const beauty          = catMap['Beauty & Wellness'] || 0;
+      const entertainment   = catMap['Entertainment & Sports'] || 0;
+
+      // Hermès spend
+      const hermesTotal = topMerchants.filter(m => /hermes|herm/i.test(m.name)).reduce((s,m)=>s+m.total,0);
+
+      // Reward opportunity calculations (vs assumed baseline ~1x/1%)
+      const diningOppty    = dining    * (4-1) * 0.015; // 4x vs 1x at 1.5¢/pt
+      const groceryOppty   = Math.min(groceries, 25000) * (4-1) * 0.015;
+      const travelOppty    = travel    * (3-1.5) * 0.015; // CSR 3x vs 1.5x UR
+      const subsOppty      = subs      * (0.06-0.01); // BCP 6% vs 1%
+      const totalOppty     = diningOppty + groceryOppty + travelOppty + subsOppty;
+
+      // MTA/Transit
+      const transitTxs = transactions.filter(t => /mta\*|nyct paygo|citi bike/i.test(t.description));
+      const transitTotal = transitTxs.reduce((s,t)=>s+t.amount,0);
+
+      // Monthly recurring (VTG*Manhattan Center)
+      const manhattanTxs = transactions.filter(t => /vtg\*manhattan|propay\*manhattan/i.test(t.description));
+      const manhattanTotal = manhattanTxs.reduce((s,t)=>s+t.amount,0);
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Big opportunity banner */}
+          <div style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1a2b4a 100%)', border: '1px solid #2d4f7a', borderRadius: 16, padding: 24, marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 40 }}>🚀</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 20, color: '#f1f5f9', marginBottom: 4 }}>Your Rewards Optimization Opportunity</div>
+                <div style={{ color: '#94a3b8', fontSize: 14 }}>By strategically routing spend to the right cards, you could capture an additional</div>
+              </div>
+              <div style={{ marginLeft: 'auto', textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 36, color: '#22c55e' }}>{fmt(totalOppty)}</div>
+                <div style={{ color: '#64748b', fontSize: 13 }}>estimated additional value / year</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Interest Charges — always show if present */}
+          {interestFees > 0 && (
+            <InsightCard
+              emoji="🚨"
+              title="Interest Charges Are Burning Cash"
+              headline={`${fmt(interestFees)} paid in interest in 2025`}
+              tag="ACTION REQUIRED"
+              tagColor="#ef4444"
+              body={`This is pure cost with zero benefit. Consider: (1) Always pay your statement balance in full each month to eliminate interest entirely. (2) If carrying a balance, a 0% APR balance transfer card (e.g., Citi Diamond Preferred — 21 months 0%) could save you this amount while you pay it down. At your spending level this is your single highest-impact financial change.`}
+            />
+          )}
+
+          {/* Dining */}
+          {dining > 500 && (
+            <InsightCard
+              emoji="🍽️"
+              title="Maximize Dining Rewards"
+              headline={`${fmt(dining)} in restaurant spending`}
+              tag={`+${fmt(diningOppty)} opportunity`}
+              tagColor="#f59e0b"
+              body={`You're leaving points on the table. The Amex Gold Card earns 4x Membership Rewards on dining worldwide — vs. the ~1x you're likely averaging today. On ${fmt(dining)} in annual dining, that's ~${Math.round(dining*3).toLocaleString()} additional MR points worth ~${fmt(diningOppty)} when transferred to Delta SkyMiles or British Airways Avios. Amex Gold's $250 annual fee is offset by $240 in dining credits ($10/mo at Grubhub/Shake Shack) + $120 in Uber Cash.`}
+            />
+          )}
+
+          {/* Groceries */}
+          {groceries > 1000 && (
+            <InsightCard
+              emoji="🛒"
+              title="Grocery Rewards Upgrade"
+              headline={`${fmt(groceries)} in grocery spend`}
+              tag={`+${fmt(groceryOppty)} opportunity`}
+              tagColor="#22c55e"
+              body={`Amex Gold: 4x MR on U.S. supermarkets (up to $25k/yr) — perfect for Citarella, Stop & Shop, and specialty markets. Alternatively, Amex Blue Cash Preferred earns 6% cash back at U.S. supermarkets (up to $6k/yr, then 1%), worth up to $360 in straight cash on $6k grocery spend. Given your mix of premium grocers, Amex Gold's 4x points likely provide more long-term value via airline transfers.`}
+            />
+          )}
+
+          {/* Luxury Shopping / Hermès */}
+          {hermesTotal > 2000 && (
+            <InsightCard
+              emoji="👜"
+              title="Luxury Shopping — Unlock Elite Perks"
+              headline={`${fmt(hermesTotal)} at Hermès alone`}
+              tag="HIGH PRIORITY"
+              tagColor="#a855f7"
+              body={`With ${fmt(shopping)} in retail spend including significant Hermès purchases, the Amex Platinum Card is worth serious consideration. Benefits include: purchase protection & extended warranty on all purchases, $200 annual Uber Cash, $200 airline fee credit, $200 hotel credit, Centurion Lounge access, Global Entry fee reimbursement, and 5x points on flights booked directly. The $695 annual fee is largely offset by credits for frequent travelers/shoppers.`}
+            />
+          )}
+
+          {/* Travel */}
+          {travel > 1000 && (
+            <InsightCard
+              emoji="✈️"
+              title="Travel & Rideshare Optimization"
+              headline={`${fmt(travel)} in travel & transport`}
+              tag={`+${fmt(travelOppty)} opportunity`}
+              tagColor="#3b82f6"
+              body={`Chase Sapphire Reserve earns 3x Ultimate Rewards on all travel and dining. Your Lyft, Uber, car services, JetBlue, and Tesla Supercharger spend all qualify. UR points transfer 1:1 to United MileagePlus, Hyatt, and more. The $550 fee includes a $300 travel credit (auto-applied), effectively making the net cost $250. For your Uber and Lyft rides specifically, CSR now offers a Lyft Pink membership.`}
+            />
+          )}
+
+          {/* Subscriptions */}
+          {subs > 200 && (
+            <InsightCard
+              emoji="📱"
+              title="Streaming & Subscription Savings"
+              headline={`${fmt(subs)} in subscriptions`}
+              tag={`+${fmt(subsOppty)} opportunity`}
+              tagColor="#14b8a6"
+              body={`Amex Blue Cash Preferred earns 6% back on U.S. streaming services (Netflix, Disney+, Hulu, HBO Max, Apple TV+, SiriusXM) — up to $6k/yr. Your Apple.com/Bill charges and SiriusXM subscriptions already qualify. On ${fmt(subs)} of eligible streaming spend, that's ${fmt(subs*0.06)} cash back vs. ~${fmt(subs*0.01)} at 1%. The $95 annual fee pays for itself with ~$1,600 in streaming spend.`}
+            />
+          )}
+
+          {/* Pet Care */}
+          {pet > 1000 && (
+            <InsightCard
+              emoji="🐾"
+              title="Pet Care Spending Strategy"
+              headline={`${fmt(pet)} on pets this year`}
+              tag="REVIEW"
+              tagColor="#f59e0b"
+              body={`No major card category bonus targets pet care directly. Best approach: use a flat 2% cash back card like the Citi Double Cash or Wells Fargo Active Cash for all pet expenses. Also worth reviewing: Nationwide Pet Insurance rates — premiums typically increase 10-20% annually; shopping alternative providers (Figo, Healthy Paws, Embrace) every 2 years can save $300–600/yr on comparable coverage.`}
+            />
+          )}
+
+          {/* Transit / NYC commuting */}
+          {transitTotal > 100 && (
+            <InsightCard
+              emoji="🚇"
+              title="NYC Transit — Use the Right Card"
+              headline={`${fmt(transitTotal)} in MTA/Citi Bike charges`}
+              tag="TIP"
+              tagColor="#06b6d4"
+              body={`Chase Sapphire Reserve counts MTA OMNY/PayGo and Citi Bike as travel (3x UR). Amex Platinum also earns 1x but includes a $200 transit credit annually. If you're already paying for CSR or Platinum, make sure these transit charges route through those cards for bonus points.`}
+            />
+          )}
+
+          {/* Recurring medical */}
+          {manhattanTotal > 500 && (
+            <InsightCard
+              emoji="🏥"
+              title="Monthly Medical / Therapy Charges"
+              headline={`${fmt(manhattanTotal)} in recurring health visits`}
+              tag="NOTE"
+              tagColor="#ec4899"
+              body={`You have regular charges from Manhattan Center / VTG services (~$275/visit across multiple months). Verify whether these qualify for FSA/HSA reimbursement — if so, paying out of a dedicated FSA account effectively gives you ~22–37% off through pre-tax dollars. No card earns a specific medical bonus, so use your highest flat-rate card (Citi Double Cash at 2%).`}
+            />
+          )}
+
+          {/* Card strategy summary */}
+          <div className="card">
+            <div className="section-title">Recommended Card-to-Category Routing</div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ fontSize: 13, width: '100%' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                    {['Category','Your Spend','Best Card','Rate','Notes'].map(h => (
+                      <th key={h} style={{ padding: '10px 12px', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {categoryData.filter(d => d.category !== 'Fees & Interest' && d.total > 50).map(({ category, total: catTotal }) => {
+                    const cfg = CATEGORY_CONFIG[category] || CATEGORY_CONFIG['Other'];
+                    const rec = CARD_RECS[category];
+                    return (
+                      <tr key={category} style={{ borderBottom: '1px solid #0f172a' }}>
+                        <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                          <span style={{ background: cfg.bg, color: cfg.color, padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                            {cfg.icon} {category}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap' }}>{fmt(catTotal)}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#22c55e', whiteSpace: 'nowrap' }}>{rec?.card || 'Citi Double Cash'}</td>
+                        <td style={{ padding: '10px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{rec?.rate || '2%'}</td>
+                        <td style={{ padding: '10px 12px', color: '#64748b', fontSize: 12 }}>{rec?.note || ''}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Skymiles section */}
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ fontSize: 32 }}>✈️</div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: '#f1f5f9' }}>Delta SkyMiles Maximization</div>
+                <div style={{ color: '#64748b', fontSize: 13 }}>If Delta is your primary airline partner</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 14 }}>
+              {[
+                { card: 'Amex Gold → Delta Gold',   pts: `Earn 4x on dining (${fmt(dining)}) → ${Math.round(dining*4).toLocaleString()} SkyMiles/yr`, desc: 'Transfer MR 1:1 to Delta. Best everyday card for frequent diners.' },
+                { card: 'Delta Reserve Amex',        pts: `Medallion Qualification Miles + Companion Certificate`, desc: 'Earn MQMs toward status. Annual companion certificate worth $500–1500 depending on route.' },
+                { card: 'Amex Platinum → Delta',     pts: `5x on flights + Global Entry fee`, desc: 'MR transfers 1:1 to Delta SkyMiles. Best for premium flight bookings and lounge access.' },
+                { card: 'Chase Sapphire Reserve',    pts: `3x UR on travel → transfer to Flying Blue or United`, desc: 'More flexible — UR transfers to 14 airline partners. Great if you fly multiple carriers.' },
+              ].map(({ card, pts, desc }) => (
+                <div key={card} style={{ background: '#0f172a', borderRadius: 12, padding: 16, border: '1px solid #1e293b' }}>
+                  <div style={{ fontWeight: 700, color: '#3b82f6', fontSize: 14, marginBottom: 6 }}>{card}</div>
+                  <div style={{ fontWeight: 600, color: '#e2e8f0', fontSize: 13, marginBottom: 6 }}>{pts}</div>
+                  <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.5 }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick wins */}
+          <div className="card">
+            <div className="section-title">⚡ Quick Wins — Low Effort, High Impact</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { icon: '🎯', text: `Consolidate daily NYC work lunch spend (Toasties, Sweetgreen, Le Cafe Coffee, Delis 48) to one card that earns dining bonuses. Even at $15/day × 250 work days = $3,750/yr in dining.` },
+                { icon: '📬', text: `Set up autopay for the full statement balance on all 3 cards to eliminate interest charges forever.` },
+                { icon: '💳', text: `Add authorized user benefits: Some Amex cards offer free authorized user access to Centurion Lounge — verify if Ashleigh's card has this benefit.` },
+                { icon: '🔄', text: `Annual card review: Call each issuer every Jan 1 to ask for retention offers — especially on high-fee cards like Amex Platinum. Issuers often offer $200–500 in statement credits to keep you.` },
+                { icon: '📊', text: `Use this analysis every quarter to spot subscription creep — unused recurring charges compound quickly.` },
+              ].map(({ icon, text }, i) => (
+                <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 16px', background: '#0f172a', borderRadius: 10 }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
+                  <span style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6 }}>{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
+            * Reward estimates based on publicly available card terms as of early 2025. Transfer partner values and card benefits may change. Annual fees not included in opportunity calculations.
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
+    //  APP
+    // ─────────────────────────────────────────
+
+    function App() {
+      const [rawFiles, setRawFiles] = useState({});
+      const [fileNames, setFileNames] = useState({});
+      const [transactions, setTransactions] = useState([]);
+      const [activeTab, setActiveTab] = useState('overview');
+      // Keyed by merchantKey (not txId) — one learned rule per merchant
+      const [overrides, setOverrides] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('spending-merchant-rules') || '{}'); }
+        catch { return {}; }
+      });
+
+      const [toast, setToast] = useState(null);
+      const toastTimer = useRef(null);
+      const showToast = useCallback((msg) => {
+        setToast(msg);
+        clearTimeout(toastTimer.current);
+        toastTimer.current = setTimeout(() => setToast(null), 3500);
+      }, []);
+
+      const handleOverride = useCallback((tx, newCat) => {
+        // Store one learned rule per merchant key, not per transaction ID
+        const mk = tx._merchantKey || cleanMerchant(tx.merchant || tx.description);
+        const count = transactions.filter(t =>
+          (t._merchantKey || cleanMerchant(t.merchant || t.description)) === mk
+        ).length;
+        setOverrides(prev => {
+          const next = { ...prev };
+          if (newCat === undefined) delete next[mk];
+          else next[mk] = newCat;
+          localStorage.setItem('spending-merchant-rules', JSON.stringify(next));
+          return next;
+        });
+        if (newCat !== undefined) {
+          const cfg = CATEGORY_CONFIG[newCat] || CATEGORY_CONFIG['Other'];
+          const label = mk.length > 28 ? mk.substring(0, 28) + '…' : mk;
+          showToast(`${cfg.icon} Learned: "${label}" → ${newCat} (${count} transaction${count !== 1 ? 's' : ''})`);
+        }
+      }, [transactions, showToast]);
+
+      const handleResetAll = useCallback(() => {
+        setOverrides({});
+        localStorage.removeItem('spending-merchant-rules');
+      }, []);
+
+      const handleFile = useCallback(async (file) => {
+        const text = await file.text();
+        const result = parseFile(text);
+        if (!result) {
+          alert(`Could not detect card type in "${file.name}".\n\nMake sure it is an unmodified Amex, Apple Card, or Chase CSV export.`);
+          return;
+        }
+        const key = result.card === 'Amex' ? 'amex' : result.card === 'Apple Card' ? 'apple' : 'chase';
+        setRawFiles(prev => ({ ...prev, [key]: text }));
+        setFileNames(prev => ({ ...prev, [key]: file.name }));
+      }, []);
+
+      // Global drop target
+      const handleGlobalDrop = useCallback((e) => {
+        e.preventDefault();
+        Array.from(e.dataTransfer.files).forEach(f => handleFile(f));
+      }, [handleFile]);
+
+      useEffect(() => {
+        const prevent = e => e.preventDefault();
+        window.addEventListener('dragover', prevent);
+        window.addEventListener('drop', handleGlobalDrop);
+        return () => { window.removeEventListener('dragover', prevent); window.removeEventListener('drop', handleGlobalDrop); };
+      }, [handleGlobalDrop]);
+
+      useEffect(() => {
+        const all = [];
+        if (rawFiles.amex)  all.push(...parseAmex(rawFiles.amex));
+        if (rawFiles.apple) all.push(...parseApple(rawFiles.apple));
+        if (rawFiles.chase) all.push(...parseChase(rawFiles.chase));
+        const categorized = all.map(t => ({ ...t, category: categorize(t) }));
+        categorized.sort((a,b) => b.dateStr.localeCompare(a.dateStr));
+        setTransactions(categorized);
+      }, [rawFiles]);
+
+      const loaded = {
+        amex: !!rawFiles.amex, amexName: fileNames.amex,
+        apple: !!rawFiles.apple, appleName: fileNames.apple,
+        chase: !!rawFiles.chase, chaseName: fileNames.chase,
+      };
+
+      // Apply learned merchant rules on top of auto-detected categories
+      const effectiveTxs = useMemo(() =>
+        transactions.map(t => {
+          const mk = cleanMerchant(t.merchant || t.description);
+          const learned = overrides[mk];
+          return learned !== undefined
+            ? { ...t, category: learned, _autoCategory: t.category, _merchantKey: mk }
+            : { ...t, _merchantKey: mk };
+        }),
+        [transactions, overrides]
+      );
+
+      const { categoryData, monthlyByCard, cardData, topMerchants, cardHolderData } = useMemo(() => {
+        const byCat = {}, byCardMonth = {}, byCard = {}, byMerchant = {}, byHolder = {};
+
+        effectiveTxs.forEach(t => {
+          // Category
+          byCat[t.category] = (byCat[t.category] || 0) + t.amount;
+          // Card × month
+          if (!byCardMonth[t.card]) byCardMonth[t.card] = {};
+          byCardMonth[t.card][t.monthKey] = (byCardMonth[t.card][t.monthKey] || 0) + t.amount;
+          // Card total
+          byCard[t.card] = (byCard[t.card] || 0) + t.amount;
+          // Merchant
+          const key = cleanMerchant(t.merchant || t.description);
+          if (!byMerchant[key]) byMerchant[key] = { name: key, total: 0, count: 0, category: t.category };
+          byMerchant[key].total += t.amount;
+          byMerchant[key].count++;
+          // Holder
+          if (t.cardHolder) byHolder[t.cardHolder] = (byHolder[t.cardHolder] || 0) + t.amount;
+        });
+
+        return {
+          categoryData: Object.entries(byCat).map(([c,t]) => ({ category: c, total: t })).sort((a,b) => b.total - a.total),
+          monthlyByCard: byCardMonth,
+          cardData: byCard,
+          topMerchants: Object.values(byMerchant).sort((a,b) => b.total - a.total).slice(0, 20),
+          cardHolderData: byHolder,
+        };
+      }, [effectiveTxs]);
+
+      const loadedCount = [rawFiles.amex, rawFiles.apple, rawFiles.chase].filter(Boolean).length;
+
+      if (loadedCount === 0) {
+        return <UploadScreen onFile={handleFile} loaded={loaded} />;
+      }
+
+      const overrideCount = Object.keys(overrides).length;
+      const tabs = [
+        { id: 'overview',      label: '📊 Overview' },
+        { id: 'categories',    label: '🏷️ Categories' },
+        { id: 'trends',        label: '📈 Trends' },
+        { id: 'transactions',  label: overrideCount > 0 ? `🧾 Transactions · 🧠 ${overrideCount} learned` : '🧾 Transactions' },
+        { id: 'insights',      label: '💡 Insights' },
+      ];
+
+      const totalSpend = transactions.reduce((s,t) => s+t.amount, 0);
+
+      return (
+        <div className="fade-in">
+          {/* Header */}
+          <div style={{ background: 'linear-gradient(180deg, #111827 0%, #0a0f1e 100%)', borderBottom: '1px solid #1e293b', padding: '20px 32px', position: 'sticky', top: 0, zIndex: 50 }}>
+            <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontWeight: 900, fontSize: 22, background: 'linear-gradient(90deg,#3b82f6,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  💳 2025 Spending Analysis
+                </div>
+                <div style={{ color: '#64748b', fontSize: 13, marginTop: 2 }}>
+                  {loadedCount} card{loadedCount > 1 ? 's' : ''} · {transactions.length.toLocaleString()} transactions · {fmt(totalSpend)} total
+                </div>
+              </div>
+              {/* Loaded badges */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[['Amex','amex','#2563eb'],['Apple','apple','#7c3aed'],['Chase','chase','#0ea5e9']].map(([label, key, color]) => (
+                  <label key={key} title={`${label}: click to replace`} style={{ cursor: 'pointer' }}>
+                    <input type="file" accept=".csv" onChange={e => { const f = e.target.files[0]; if (f) handleFile(f); }} />
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999,
+                      background: rawFiles[key] ? color+'22' : '#1e293b',
+                      border: `1px solid ${rawFiles[key] ? color+'55' : '#334155'}`,
+                      color: rawFiles[key] ? color : '#475569', fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}>
+                      {rawFiles[key] ? '✓' : '+'} {label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {/* Tabs */}
+            <div style={{ maxWidth: 1280, margin: '12px auto 0', display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 2 }}>
+              {tabs.map(t => (
+                <button key={t.id} className={`tab-btn${activeTab === t.id ? ' active' : ''}`} onClick={() => setActiveTab(t.id)}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px' }} className="fade-in" key={activeTab}>
+            {activeTab === 'overview'     && <OverviewTab transactions={effectiveTxs} categoryData={categoryData} monthlyByCard={monthlyByCard} cardData={cardData} cardHolderData={cardHolderData} />}
+            {activeTab === 'categories'   && <CategoriesTab categoryData={categoryData} transactions={effectiveTxs} />}
+            {activeTab === 'trends'       && <TrendsTab transactions={effectiveTxs} monthlyByCard={monthlyByCard} topMerchants={topMerchants} />}
+            {activeTab === 'transactions' && <TransactionsTab transactions={effectiveTxs} overrides={overrides} onOverride={handleOverride} onResetAll={handleResetAll} />}
+            {activeTab === 'insights'     && <InsightsTab transactions={effectiveTxs} categoryData={categoryData} topMerchants={topMerchants} />}
+          </div>
+
+          {/* Toast notification */}
+          {toast && (
+            <div style={{
+              position: 'fixed', bottom: 28, right: 28, zIndex: 9999,
+              background: '#1e293b', border: '1px solid #334155', borderRadius: 12,
+              padding: '13px 20px', color: '#e2e8f0', fontSize: 14, fontWeight: 500,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              display: 'flex', alignItems: 'center', gap: 10, maxWidth: 400,
+              animation: 'fadeIn 0.2s ease',
+            }}>
+              <span style={{ flex: 1 }}>{toast}</span>
+              <button onClick={() => setToast(null)}
+                style={{ background: 'none', color: '#475569', fontSize: 16, lineHeight: 1, padding: '0 2px', borderRadius: 4 }}>×</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
