@@ -1505,6 +1505,288 @@
     }
 
     // ─────────────────────────────────────────
+    //  TAX TAB
+    // ─────────────────────────────────────────
+
+    function TaxTab({ transactions }) {
+      const [agi, setAgi] = useState('');
+      const [copied, setCopied] = useState(false);
+
+      const charityTxs = useMemo(() =>
+        transactions.filter(t => t.category === 'Charity & Donations')
+                    .sort((a,b) => a.dateStr.localeCompare(b.dateStr)),
+        [transactions]
+      );
+      const charityTotal = charityTxs.reduce((s,t) => s+t.amount, 0);
+
+      const medicalTxs = useMemo(() =>
+        transactions.filter(t => t.category === 'Health & Medical')
+                    .sort((a,b) => a.dateStr.localeCompare(b.dateStr)),
+        [transactions]
+      );
+      const medicalTotal = medicalTxs.reduce((s,t) => s+t.amount, 0);
+
+      const agiNum = parseFloat((agi || '').replace(/[^0-9.]/g,'')) || 0;
+      const medicalThreshold = agiNum * 0.075;
+      const medicalDeductible = agiNum > 0 ? Math.max(0, medicalTotal - medicalThreshold) : null;
+
+      const largeDonations = charityTxs.filter(t => t.amount >= 250);
+      const smallDonations = charityTxs.filter(t => t.amount < 250);
+
+      const copyForTaxPrep = useCallback(() => {
+        const lines = [
+          '2025 CHARITABLE CONTRIBUTIONS — Schedule A',
+          '='.repeat(52),
+          '',
+          ...charityTxs.map(t =>
+            `${t.dateStr}  ${fmtD(t.amount).padStart(10)}  ${t.description}`
+          ),
+          '',
+          '='.repeat(52),
+          `TOTAL  ${fmtD(charityTotal)}`,
+        ];
+        navigator.clipboard.writeText(lines.join('\n')).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2500);
+        });
+      }, [charityTxs, charityTotal]);
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Banner */}
+          <div style={{ background: 'linear-gradient(135deg, #14532d 0%, #052e16 100%)', border: '1px solid #166534', borderRadius: 16, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 40 }}>🧾</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 20, color: '#f0fdf4', marginBottom: 4 }}>2025 Tax-Deductible Summary</div>
+                <div style={{ color: '#86efac', fontSize: 14 }}>Itemized deduction candidates pulled from your categorized transactions. Verify each with official receipts before filing.</div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ color: '#86efac', fontSize: 13, marginBottom: 2 }}>Charitable contributions</div>
+                <div style={{ fontWeight: 900, fontSize: 36, color: '#4ade80', lineHeight: 1 }}>{fmt(charityTotal)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Charitable Contributions ── */}
+          <div className="card">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <div className="section-title" style={{ marginBottom: 2 }}>🎗️ Charitable Contributions</div>
+                <div style={{ color: '#64748b', fontSize: 13 }}>
+                  {charityTxs.length} donation{charityTxs.length !== 1 ? 's' : ''} · {fmt(charityTotal)} total · deductible on Schedule A (if itemizing)
+                </div>
+              </div>
+              <button
+                onClick={copyForTaxPrep}
+                style={{ background: copied ? '#14532d' : '#1e293b', color: copied ? '#4ade80' : '#94a3b8',
+                  border: `1px solid ${copied ? '#166534' : '#334155'}`, borderRadius: 8,
+                  padding: '8px 16px', fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}>
+                {copied ? '✓ Copied!' : '📋 Copy for tax prep'}
+              </button>
+            </div>
+
+            {charityTxs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: '#334155' }}>
+                No transactions categorized as Charity &amp; Donations yet.
+              </div>
+            ) : (
+              <>
+                {/* ≥$250 — written acknowledgment required */}
+                {largeDonations.length > 0 && (
+                  <div style={{ marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <span style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', padding: '3px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
+                        ⚠️ $250+ — Written acknowledgment required
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table style={{ fontSize: 13, width: '100%' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                            {['Date','Organization','Card','Amount','Status'].map(h => (
+                              <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {largeDonations.map(t => {
+                            const cardCfg = CARD_CONFIG[t.card] || {};
+                            return (
+                              <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
+                                <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                                <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
+                                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</td>
+                                <td style={{ padding: '10px 12px', fontWeight: 700, color: '#4ade80', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    Need written receipt
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* <$250 — bank record sufficient */}
+                {smallDonations.length > 0 && (
+                  <div>
+                    {largeDonations.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <span style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', padding: '3px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700 }}>
+                          ✓ Under $250 — bank/card record sufficient
+                        </span>
+                      </div>
+                    )}
+                    <div className="overflow-x-auto">
+                      <table style={{ fontSize: 13, width: '100%' }}>
+                        {largeDonations.length === 0 && (
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                              {['Date','Organization','Card','Amount','Status'].map(h => (
+                                <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                        )}
+                        <tbody>
+                          {smallDonations.map(t => {
+                            const cardCfg = CARD_CONFIG[t.card] || {};
+                            return (
+                              <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
+                                <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                                <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
+                                <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</td>
+                                <td style={{ padding: '10px 12px', fontWeight: 700, color: '#4ade80', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
+                                <td style={{ padding: '10px 12px' }}>
+                                  <span style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    Card record sufficient
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Total row */}
+                <div style={{ borderTop: '1px solid #1e293b', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24 }}>
+                  <span style={{ color: '#64748b', fontSize: 14 }}>{charityTxs.length} donations</span>
+                  <span style={{ fontWeight: 800, fontSize: 22, color: '#4ade80' }}>{fmtD(charityTotal)}</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* IRS documentation rules callout */}
+          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, padding: '16px 20px' }}>
+            <div style={{ fontWeight: 700, color: '#f1f5f9', marginBottom: 10, fontSize: 14 }}>📋 IRS Documentation Rules (Cash Contributions)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { range: 'Any amount', req: 'Donate to a qualifying 501(c)(3) organization. Political donations and raffle tickets do not qualify.' },
+                { range: 'Under $250', req: 'Bank record, credit card statement, or receipt from the organization. Your card statement alone is sufficient.' },
+                { range: '$250 or more', req: 'Written acknowledgment from the organization is required by the IRS — your card statement is not enough. Request a donation receipt letter from each org.' },
+                { range: 'Over $500 (non-cash)', req: 'Form 8283 required. For non-cash donations over $5,000, a qualified appraisal is also required.' },
+              ].map(({ range, req }) => (
+                <div key={range} style={{ display: 'flex', gap: 12 }}>
+                  <span style={{ color: '#3b82f6', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', minWidth: 130 }}>{range}</span>
+                  <span style={{ color: '#64748b', fontSize: 13, lineHeight: 1.5 }}>{req}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Medical Expenses ── */}
+          <div className="card">
+            <div style={{ marginBottom: 16 }}>
+              <div className="section-title" style={{ marginBottom: 2 }}>🏥 Medical &amp; Dental Expenses</div>
+              <div style={{ color: '#64748b', fontSize: 13 }}>
+                {medicalTxs.length} transaction{medicalTxs.length !== 1 ? 's' : ''} · {fmt(medicalTotal)} total · deductible only to the extent they exceed 7.5% of your AGI
+              </div>
+            </div>
+
+            {/* AGI calculator */}
+            <div style={{ background: '#0f172a', borderRadius: 10, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <label style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>Enter your 2025 AGI:</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 350000"
+                  value={agi}
+                  onChange={e => setAgi(e.target.value)}
+                  style={{ width: 140 }}
+                />
+              </div>
+              {agiNum > 0 && (
+                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ color: '#64748b', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>7.5% Threshold</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: '#f59e0b' }}>{fmt(medicalThreshold)}</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ color: '#64748b', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Medical Spend</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: '#e2e8f0' }}>{fmt(medicalTotal)}</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ color: '#64748b', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Potentially Deductible</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: medicalDeductible > 0 ? '#4ade80' : '#475569' }}>
+                      {medicalDeductible > 0 ? fmt(medicalDeductible) : 'Below threshold'}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {medicalTxs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: '#334155' }}>No transactions categorized as Health &amp; Medical.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table style={{ fontSize: 13, width: '100%' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                      {['Date','Provider / Description','Card','Amount'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {medicalTxs.map(t => {
+                      const cardCfg = CARD_CONFIG[t.card] || {};
+                      return (
+                        <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
+                          <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                          <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 340 }} className="truncate" title={t.description}>{t.description}</td>
+                          <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</td>
+                          <td style={{ padding: '10px 12px', fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div style={{ borderTop: '1px solid #1e293b', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24 }}>
+                  <span style={{ color: '#64748b', fontSize: 14 }}>{medicalTxs.length} transactions</span>
+                  <span style={{ fontWeight: 800, fontSize: 22, color: '#f1f5f9' }}>{fmtD(medicalTotal)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '4px 0' }}>
+            * This is not tax advice. Deductibility depends on your filing status, AGI, whether you itemize, and whether each organization qualifies under IRC §170. Consult a CPA or tax advisor before filing.
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
     //  APP
     // ─────────────────────────────────────────
 
@@ -1652,6 +1934,7 @@
         { id: 'trends',        label: '📈 Trends' },
         { id: 'transactions',  label: overrideCount > 0 ? `🧾 Transactions · 🧠 ${overrideCount} learned` : '🧾 Transactions' },
         { id: 'insights',      label: '💡 Insights' },
+        { id: 'tax',           label: '🧾 Tax' },
       ];
 
       const totalSpend = transactions.reduce((s,t) => s+t.amount, 0);
@@ -1701,6 +1984,7 @@
             {activeTab === 'trends'       && <TrendsTab transactions={effectiveTxs} monthlyByCard={monthlyByCard} topMerchants={topMerchants} />}
             {activeTab === 'transactions' && <TransactionsTab transactions={effectiveTxs} overrides={overrides} onOverride={handleOverride} onResetAll={handleResetAll} />}
             {activeTab === 'insights'     && <InsightsTab transactions={effectiveTxs} categoryData={categoryData} topMerchants={topMerchants} />}
+            {activeTab === 'tax'          && <TaxTab transactions={effectiveTxs} />}
           </div>
 
           {/* Toast notification */}
