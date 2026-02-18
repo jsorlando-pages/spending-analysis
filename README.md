@@ -1,0 +1,164 @@
+# 2025 Credit Card Spending Analysis
+
+A private, single-file web app for analyzing household credit card spending across American Express, Apple Card, and Chase. Drop in your CSV exports and get an interactive dashboard with categorized transactions, charts, trend analysis, and credit card optimization recommendations — all processed locally in your browser with no data ever leaving your device.
+
+Live at **[expenses.jsorlando.com](https://expenses.jsorlando.com)**
+
+---
+
+## What It Does
+
+The app takes the CSV transaction exports from up to three credit cards and produces a unified view of all household spending. It auto-detects the card type from the CSV format, categorizes every transaction using a rule-based engine, and presents the data across five interactive views.
+
+### Upload & Parsing
+
+The landing screen accepts CSV files via drag-and-drop or file picker. Each file is parsed entirely in the browser — no server, no network request for your data. The app identifies the card type automatically by inspecting the CSV header:
+
+| Card | Detection signal |
+|------|-----------------|
+| American Express | `Card Member` + `Account #` columns |
+| Apple Card | `Clearing Date` + `Purchased By` columns |
+| Chase | `Post Date` + `Memo` columns |
+
+Payments, credits, and refunds are filtered out. Only charges are included. Transactions outside 2025 are excluded.
+
+### Categorization
+
+Every transaction is run through a priority-ordered set of regex rules that match merchant names, original card-assigned categories, and known merchant patterns. The 23 supported categories are:
+
+| Category | Category | Category |
+|----------|----------|----------|
+| Dining & Restaurants | Groceries | Shopping & Retail |
+| Travel & Transport | Health & Medical | Pet Care |
+| Technology | Home & Garden | Beauty & Wellness |
+| Entertainment & Sports | Golf | Fitness |
+| Dry Cleaning | Coffee | Wine & Spirits |
+| Insurance | Charity & Donations | Flowers & Gifts |
+| Auto Maintenance | Utilities | Subscriptions |
+| Fees & Interest | Other | |
+
+#### Learned Merchant Rules
+
+Any transaction's category can be overridden by clicking its category badge in the Transactions tab. When you reassign a category, the app creates a merchant-level rule that applies to **all** transactions from that merchant — past and future. Learned rules are marked with 🧠 and persist across sessions via `localStorage`. Rules can be removed individually or reset all at once.
+
+---
+
+## The Five Tabs
+
+### Overview
+
+High-level household snapshot:
+
+- **Stat cards** — total spend, monthly average, top category, peak month
+- **Donut chart** — top 10 categories by spend (remaining categories collapsed into an "N more" slice)
+- **Stacked bar chart** — monthly spend broken out by card (Amex / Apple Card / Chase)
+- **Card totals** — annual spend per card with color-coded badges
+- **Cardholder split** — per-person spend with progress bars (Jonathan / Ashleigh), shown only when multiple cardholders are present
+
+### Categories
+
+A card for every category that has at least one transaction:
+
+- Total spend, transaction count, average transaction size
+- Progress bar showing share of total household spend
+- **Card optimization tip** — the specific credit card and reward rate recommended for that category, with notes on eligibility and trade-offs
+
+### Trends
+
+Time-series and merchant views:
+
+- **Monthly Spending Trend** — same stacked bar chart as Overview, with a monthly summary grid showing each month's total
+- **Top Merchants by Spend** — horizontal bar chart of the 12 highest-spend merchants, color-coded by category, showing dollar amount and transaction count on hover
+
+### Transactions
+
+Full transaction ledger with:
+
+- **Search** — filters by description or merchant name (real-time)
+- **Card filter** — show one card or all
+- **Category filter** — show one category or all
+- **Sortable columns** — date (default: newest first) and amount
+- **Learned-only toggle** — show only transactions with overridden categories
+- **Pagination** — 50 transactions per page
+- **Inline category editing** — click any badge to reassign; changes propagate to all matching merchants instantly
+
+### Insights
+
+Hardcoded analysis cards with reward optimization math specific to the household's actual spend:
+
+- Unrealized reward opportunity across dining, groceries, travel, and subscriptions (estimated value vs. assumed 1% baseline)
+- Card fee and interest flagging
+- Transit spending patterns
+- Recurring charge identification
+- Category-specific observations (e.g. Hermès spend, pet care costs)
+
+---
+
+## How It's Built
+
+The entire application is a single `.html` file with no build step, no bundler, and no backend. All dependencies are loaded from CDNs at runtime.
+
+### Stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI framework | [React 18](https://react.dev) (UMD build via unpkg) |
+| JSX compilation | [Babel Standalone](https://babeljs.io/docs/babel-standalone) (in-browser transform) |
+| Charts | [Chart.js 4.4](https://www.chartjs.org) |
+| Styling | Inline CSS + a small set of utility classes (no framework) |
+| Persistence | `localStorage` (merchant overrides only) |
+| Hosting | AWS S3 + CloudFront + ACM + Route 53 |
+
+### Key React Patterns
+
+- `useState` / `useEffect` / `useMemo` / `useCallback` / `useRef` throughout
+- Chart instances are created imperatively via `useRef` and destroyed on cleanup to prevent canvas leaks
+- `useMemo` gates all expensive aggregations (category rollups, merchant rollups, filtered transaction lists) behind dependency arrays
+- Merchant override state is stored as a flat `{ merchantKey → category }` map and merged into transactions at render time
+
+### CSV Parsing
+
+A hand-rolled CSV parser handles quoted fields and escaped quotes (`""`). Each card format has its own parser function (`parseAmex`, `parseApple`, `parseChase`) that normalizes the output into a shared transaction shape:
+
+```
+{
+  id, year, month, day, monthKey, dateStr,
+  description, merchant, amount,
+  card, cardHolder, originalCategory
+}
+```
+
+### Categorization Engine
+
+Rules are evaluated in priority order — more specific rules (e.g. `Pet Care`, `Golf`) run before broader ones (e.g. `Dining`, `Shopping`). Each rule is a predicate function that receives the full transaction object, allowing rules to test description text, original card category, and merchant name simultaneously.
+
+---
+
+## Deployment
+
+Hosted on AWS using a fully private architecture:
+
+```
+Browser → Route 53 → CloudFront (HTTPS, ACM cert) → S3 (private bucket, OAC)
+```
+
+- **S3 bucket**: `spending-analysis-jsorlando` (us-east-1), all public access blocked
+- **CloudFront**: distribution `E1M5T97D4P6SIS`, PriceClass_100 (US/EU), HTTP → HTTPS redirect
+- **ACM certificate**: `expenses.jsorlando.com`, DNS-validated via Route 53
+- **Origin Access Control**: only the CloudFront distribution can read from S3
+
+### Deploying Updates
+
+```bash
+# Upload new version
+aws s3 cp index.html s3://spending-analysis-jsorlando/index.html --content-type "text/html"
+
+# Invalidate CloudFront cache
+aws cloudfront create-invalidation --distribution-id E1M5T97D4P6SIS --paths "/*"
+```
+
+---
+
+## Privacy
+
+All CSV parsing and data processing runs in your browser. No transaction data, file contents, or personal information is sent to any server. The S3 bucket and CloudFront distribution serve only the static `index.html` file itself.
