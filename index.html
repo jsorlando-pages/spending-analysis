@@ -2376,8 +2376,7 @@
     // ─────────────────────────────────────────
 
     function App() {
-      const [rawFiles, setRawFiles] = useState({});
-      const [fileNames, setFileNames] = useState({});
+      const [loadedFileList, setLoadedFileList] = useState([]); // [{id, cardType, text, name}]
       const [pendingFiles, setPendingFiles] = useState([]); // [{id, text, name}] — awaiting card type
       const [transactions, setTransactions] = useState([]);
       const [activeTab, setActiveTab] = useState('overview');
@@ -2426,9 +2425,7 @@
       }, []);
 
       const processFile = useCallback((text, name, cardType) => {
-        const key = cardType === 'Amex' ? 'amex' : cardType === 'Apple Card' ? 'apple' : 'chase';
-        setRawFiles(prev => ({ ...prev, [key]: text }));
-        setFileNames(prev => ({ ...prev, [key]: name }));
+        setLoadedFileList(prev => [...prev, { id: Date.now() + Math.random(), cardType, text, name }]);
       }, []);
 
       const handleFile = useCallback(async (file) => {
@@ -2457,9 +2454,8 @@
         setPendingFiles(prev => prev.filter(x => x.id !== id));
       }, []);
 
-      const handleRemoveLoaded = useCallback((key) => {
-        setRawFiles(prev => { const n = { ...prev }; delete n[key]; return n; });
-        setFileNames(prev => { const n = { ...prev }; delete n[key]; return n; });
+      const handleRemoveLoaded = useCallback((id) => {
+        setLoadedFileList(prev => prev.filter(f => f.id !== id));
       }, []);
 
       // Global drop target
@@ -2477,19 +2473,20 @@
 
       useEffect(() => {
         const all = [];
-        if (rawFiles.amex)  all.push(...parseAmex(rawFiles.amex));
-        if (rawFiles.apple) all.push(...parseApple(rawFiles.apple));
-        if (rawFiles.chase) all.push(...parseChase(rawFiles.chase));
+        loadedFileList.forEach(({ cardType, text }) => {
+          if (cardType === 'Amex')            all.push(...parseAmex(text));
+          else if (cardType === 'Apple Card') all.push(...parseApple(text));
+          else if (cardType === 'Chase')      all.push(...parseChase(text));
+        });
         const categorized = all.map(t => ({ ...t, category: categorize(t) }));
         categorized.sort((a,b) => b.dateStr.localeCompare(a.dateStr));
         setTransactions(categorized);
-      }, [rawFiles]);
+      }, [loadedFileList]);
 
-      const loadedFiles = [
-        rawFiles.amex  && { key: 'amex',  name: fileNames.amex,  cardLabel: 'American Express', color: '#2563eb', emoji: '🔵' },
-        rawFiles.apple && { key: 'apple', name: fileNames.apple, cardLabel: 'Apple Card',        color: '#7c3aed', emoji: '🟣' },
-        rawFiles.chase && { key: 'chase', name: fileNames.chase, cardLabel: 'Chase',             color: '#0ea5e9', emoji: '🔷' },
-      ].filter(Boolean);
+      const loadedFiles = loadedFileList.map(f => {
+        const o = CARD_OPTIONS.find(x => x.value === f.cardType) || { label: f.cardType, color: '#64748b', emoji: '📄' };
+        return { key: f.id, id: f.id, name: f.name, cardType: f.cardType, cardLabel: o.label, color: o.color, emoji: o.emoji };
+      });
 
       // Apply learned merchant rules on top of auto-detected categories
       const effectiveTxs = useMemo(() =>
@@ -2578,17 +2575,15 @@
               </div>
               {/* Loaded badges */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                {[['Amex','amex','#2563eb'],['Apple','apple','#7c3aed'],['Chase','chase','#0ea5e9']].map(([label, key, color]) => (
-                  rawFiles[key] ? (
-                    <span key={key} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999,
-                      background: color+'22', border: `1px solid ${color}55`, color, fontSize: 13, fontWeight: 600 }}>
-                      ✓ {label}
-                      <button onClick={() => handleRemoveLoaded(key)} title={`Remove ${label}`}
-                        style={{ background: 'none', color: color+'99', fontSize: 14, lineHeight: 1, padding: '0 0 0 2px', borderRadius: 4, transition: 'color 0.15s' }}
-                        onMouseEnter={e => e.target.style.color='#ef4444'}
-                        onMouseLeave={e => e.target.style.color=color+'99'}>×</button>
-                    </span>
-                  ) : null
+                {loadedFiles.map(({ id, cardLabel, color }) => (
+                  <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999,
+                    background: color+'22', border: `1px solid ${color}55`, color, fontSize: 13, fontWeight: 600 }}>
+                    ✓ {cardLabel}
+                    <button onClick={() => handleRemoveLoaded(id)} title={`Remove ${cardLabel}`}
+                      style={{ background: 'none', color: color+'99', fontSize: 14, lineHeight: 1, padding: '0 0 0 2px', borderRadius: 4, transition: 'color 0.15s' }}
+                      onMouseEnter={e => e.target.style.color='#ef4444'}
+                      onMouseLeave={e => e.target.style.color=color+'99'}>×</button>
+                  </span>
                 ))}
                 <label title="Add a CSV" style={{ cursor: 'pointer' }}>
                   <input type="file" accept=".csv" multiple onChange={e => { handleFiles(Array.from(e.target.files)); e.target.value=''; }} />
