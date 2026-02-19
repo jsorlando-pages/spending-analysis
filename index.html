@@ -1145,6 +1145,91 @@
     //  TRENDS TAB
     // ─────────────────────────────────────────
 
+    function CategoryHeatmap({ transactions, monthKeys }) {
+      const [limit, setLimit] = useState(10);
+
+      const rows = useMemo(() => {
+        const byCat = {};
+        transactions.forEach(t => {
+          if (!byCat[t.category]) byCat[t.category] = {};
+          byCat[t.category][t.monthKey] = (byCat[t.category][t.monthKey] || 0) + t.amount;
+        });
+        return Object.entries(byCat)
+          .map(([category, byMonth]) => {
+            const total = Object.values(byMonth).reduce((s, v) => s + v, 0);
+            const peak  = Math.max(...Object.values(byMonth));
+            return { category, byMonth, total, peak };
+          })
+          .sort((a, b) => b.total - a.total);
+      }, [transactions]);
+
+      const displayed = limit === 'all' ? rows : rows.slice(0, limit);
+
+      return (
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div className="section-title" style={{ marginBottom: 2 }}>Spend by Category &amp; Month</div>
+              <div style={{ color: '#64748b', fontSize: 13 }}>Cell shading shows each category's relative high — darker = peak month</div>
+            </div>
+            <select value={limit} onChange={e => setLimit(e.target.value === 'all' ? 'all' : Number(e.target.value))}>
+              <option value={5}>Top 5 categories</option>
+              <option value={10}>Top 10 categories</option>
+              <option value="all">All categories</option>
+            </select>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ fontSize: 12, width: '100%', borderCollapse: 'separate', borderSpacing: 3 }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '4px 10px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap', minWidth: 160 }}>Category</th>
+                  {MONTHS_SHORT.map(mo => (
+                    <th key={mo} style={{ padding: '4px 6px', color: '#475569', fontWeight: 600, textAlign: 'center', minWidth: 54 }}>{mo}</th>
+                  ))}
+                  <th style={{ padding: '4px 10px', color: '#475569', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayed.map(({ category, byMonth, total, peak }) => {
+                  const cfg = CATEGORY_CONFIG[category] || CATEGORY_CONFIG['Other'];
+                  return (
+                    <tr key={category}>
+                      <td style={{ padding: '4px 10px', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{cfg.icon} {category}</span>
+                      </td>
+                      {monthKeys.map(mk => {
+                        const val = byMonth[mk] || 0;
+                        const intensity = peak > 0 && val > 0 ? val / peak : 0;
+                        const alpha = val > 0 ? Math.round(30 + intensity * 195).toString(16).padStart(2, '0') : '00';
+                        const textColor = intensity > 0.55 ? '#f1f5f9' : intensity > 0 ? cfg.color : '#334155';
+                        return (
+                          <td key={mk} style={{
+                            background: val > 0 ? cfg.color + alpha : '#0a0f1e',
+                            border: `1px solid ${val > 0 ? cfg.color + '33' : '#0f172a'}`,
+                            borderRadius: 5,
+                            padding: '5px 4px',
+                            textAlign: 'center',
+                            fontWeight: val > 0 ? 600 : 400,
+                            color: textColor,
+                            transition: 'background 0.2s',
+                          }}>
+                            {val > 0 ? fmtK(val) : <span style={{ color: '#1e293b' }}>—</span>}
+                          </td>
+                        );
+                      })}
+                      <td style={{ padding: '4px 10px', fontWeight: 800, color: cfg.color, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        {fmt(total)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+
     function TrendsTab({ transactions, monthlyByCard, topMerchants, monthKeys }) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1166,6 +1251,7 @@
               })}
             </div>
           </div>
+          <CategoryHeatmap transactions={transactions} monthKeys={monthKeys} />
           <div className="card">
             <div className="section-title">Top Merchants by Spend</div>
             <HBarChart items={topMerchants} />
