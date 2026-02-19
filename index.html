@@ -2543,7 +2543,7 @@
 
       const loadedCount = loadedFiles.length;
 
-      if (loadedCount === 0 && pendingFiles.length === 0) {
+      if (loadedCount === 0 || pendingFiles.length > 0) {
         return <UploadScreen onFiles={handleFiles} loadedFiles={loadedFiles} pendingFiles={pendingFiles} onAssignCard={handleAssignCard} onRemoveLoaded={handleRemoveLoaded} onRemovePending={handleRemovePending} />;
       }
 
