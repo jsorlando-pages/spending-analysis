@@ -319,9 +319,10 @@
         if (/online payment|payment.*thank/i.test(desc)) continue;
         const dt = parseDate(dateRaw.trim());
         if (!dt) continue;
-        const holder = /ashleigh/i.test(cardMember) ? 'Ashleigh' : 'Jonathan';
+        const rawName = cardMember.trim().split(/\s+/)[0] || '';
+        const holder = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
         txs.push({ id: `amex-${i}`, ...dt, description: desc, merchant: desc,
-                   amount, card: 'Amex', cardHolder: holder, originalCategory: null });
+                   amount, card: 'Amex', cardHolder: holder || 'Primary', originalCategory: null });
       }
       return txs;
     }
@@ -339,7 +340,8 @@
         if (isNaN(amount) || amount <= 0) continue;
         const dt = parseDate(txDate.trim());
         if (!dt) continue;
-        const holder = /ashleigh/i.test(purchasedBy || '') ? 'Ashleigh' : 'Jonathan';
+        const rawName = (purchasedBy || '').trim().split(/\s+/)[0] || '';
+        const holder = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase() : 'Primary';
         txs.push({ id: `apple-${i}`, ...dt,
                    description: description.trim(), merchant: merchant.trim(),
                    amount, card: 'Apple Card', cardHolder: holder,
@@ -365,7 +367,7 @@
         const cat  = decodeHTML(category.trim());
         txs.push({ id: `chase-${i}`, ...dt,
                    description: desc, merchant: desc,
-                   amount: Math.abs(amount), card: 'Chase', cardHolder: 'Jonathan',
+                   amount: Math.abs(amount), card: 'Chase', cardHolder: 'Primary',
                    originalCategory: cat });
       }
       return txs;
@@ -1037,9 +1039,10 @@
             <div className="card">
               <div className="section-title">Spending by Cardholder</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-                {Object.entries(cardHolderData).sort((a,b)=>b[1]-a[1]).map(([holder, amt]) => {
+                {Object.entries(cardHolderData).sort((a,b)=>b[1]-a[1]).map(([holder, amt], hi) => {
                   const pct = ((amt/total)*100).toFixed(1);
-                  const color = holder === 'Jonathan' ? '#3b82f6' : '#ec4899';
+                  const holderColors = ['#3b82f6','#ec4899','#22c55e','#f59e0b'];
+                  const color = holderColors[hi % holderColors.length];
                   return (
                     <div key={holder} style={{ background: 'var(--bg-deep)', borderRadius: 12, padding: 20 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -1750,9 +1753,7 @@
       const subs            = catMap['Subscriptions'] || 0;
       const beauty          = catMap['Beauty & Wellness'] || 0;
       const entertainment   = catMap['Entertainment & Sports'] || 0;
-
-      // Hermès spend
-      const hermesTotal = topMerchants.filter(m => /hermes|herm/i.test(m.name)).reduce((s,m)=>s+m.total,0);
+      const health          = catMap['Health & Medical'] || 0;
 
       // Reward opportunity calculations (vs assumed baseline ~1x/1%)
       const diningOppty    = dining    * (4-1) * 0.015; // 4x vs 1x at 1.5¢/pt
@@ -1765,9 +1766,6 @@
       const transitTxs = transactions.filter(t => /mta\*|nyct paygo|citi bike/i.test(t.description));
       const transitTotal = transitTxs.reduce((s,t)=>s+t.amount,0);
 
-      // Monthly recurring (VTG*Manhattan Center)
-      const manhattanTxs = transactions.filter(t => /vtg\*manhattan|propay\*manhattan/i.test(t.description));
-      const manhattanTotal = manhattanTxs.reduce((s,t)=>s+t.amount,0);
 
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1819,19 +1817,19 @@
               headline={`${fmt(groceries)} in grocery spend`}
               tag={`+${fmt(groceryOppty)} opportunity`}
               tagColor="#22c55e"
-              body={`Amex Gold: 4x MR on U.S. supermarkets (up to $25k/yr) — perfect for Citarella, Stop & Shop, and specialty markets. Alternatively, Amex Blue Cash Preferred earns 6% cash back at U.S. supermarkets (up to $6k/yr, then 1%), worth up to $360 in straight cash on $6k grocery spend. Given your mix of premium grocers, Amex Gold's 4x points likely provide more long-term value via airline transfers.`}
+              body={`Amex Gold: 4x MR on U.S. supermarkets (up to $25k/yr). Alternatively, Amex Blue Cash Preferred earns 6% cash back at U.S. supermarkets (up to $6k/yr, then 1%), worth up to $360 in straight cash on $6k grocery spend. Amex Gold's 4x points typically provide more long-term value via airline transfers if you travel regularly.`}
             />
           )}
 
-          {/* Luxury Shopping / Hermès */}
-          {hermesTotal > 2000 && (
+          {/* High retail spend */}
+          {shopping > 5000 && (
             <InsightCard
               emoji="👜"
-              title="Luxury Shopping — Unlock Elite Perks"
-              headline={`${fmt(hermesTotal)} at Hermès alone`}
+              title="High Retail Spend — Unlock Elite Perks"
+              headline={`${fmt(shopping)} in shopping & retail`}
               tag="HIGH PRIORITY"
               tagColor="#a855f7"
-              body={`With ${fmt(shopping)} in retail spend including significant Hermès purchases, the Amex Platinum Card is worth serious consideration. Benefits include: purchase protection & extended warranty on all purchases, $200 annual Uber Cash, $200 airline fee credit, $200 hotel credit, Centurion Lounge access, Global Entry fee reimbursement, and 5x points on flights booked directly. The $695 annual fee is largely offset by credits for frequent travelers/shoppers.`}
+              body={`At this level of retail spend the Amex Platinum Card is worth serious consideration. Benefits include: purchase protection & extended warranty on all purchases, $200 annual Uber Cash, $200 airline fee credit, $200 hotel credit, Centurion Lounge access, Global Entry fee reimbursement, and 5x points on flights booked directly. The $695 annual fee is largely offset by credits for frequent travelers and shoppers.`}
             />
           )}
 
@@ -1883,15 +1881,15 @@
             />
           )}
 
-          {/* Recurring medical */}
-          {manhattanTotal > 500 && (
+          {/* Health & Medical */}
+          {health > 500 && (
             <InsightCard
               emoji="🏥"
-              title="Monthly Medical / Therapy Charges"
-              headline={`${fmt(manhattanTotal)} in recurring health visits`}
+              title="Health & Medical — FSA/HSA Opportunity"
+              headline={`${fmt(health)} in health & medical spend`}
               tag="NOTE"
               tagColor="#ec4899"
-              body={`You have regular charges from Manhattan Center / VTG services (~$275/visit across multiple months). Verify whether these qualify for FSA/HSA reimbursement — if so, paying out of a dedicated FSA account effectively gives you ~22–37% off through pre-tax dollars. No card earns a specific medical bonus, so use your highest flat-rate card (Citi Double Cash at 2%).`}
+              body={`Verify whether recurring medical charges qualify for FSA/HSA reimbursement — if so, paying from a dedicated FSA account effectively gives you ~22–37% off through pre-tax dollars. No major card earns a specific medical bonus, so use your highest flat-rate card (e.g. Citi Double Cash at 2%) for these charges.`}
             />
           )}
 
@@ -1960,9 +1958,9 @@
             <div className="section-title">⚡ Quick Wins — Low Effort, High Impact</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { icon: '🎯', text: `Consolidate daily NYC work lunch spend (Toasties, Sweetgreen, Le Cafe Coffee, Delis 48) to one card that earns dining bonuses. Even at $15/day × 250 work days = $3,750/yr in dining.` },
+                { icon: '🎯', text: `Consolidate recurring work lunch and coffee spend to one card that earns dining bonuses — even modest daily spend adds up to thousands per year in dining.` },
                 { icon: '📬', text: `Set up autopay for the full statement balance on all 3 cards to eliminate interest charges forever.` },
-                { icon: '💳', text: `Add authorized user benefits: Some Amex cards offer free authorized user access to Centurion Lounge — verify if Ashleigh's card has this benefit.` },
+                { icon: '💳', text: `Add authorized user benefits: Some Amex cards offer free authorized user access to Centurion Lounge — verify if your authorized user's card qualifies.` },
                 { icon: '🔄', text: `Annual card review: Call each issuer every Jan 1 to ask for retention offers — especially on high-fee cards like Amex Platinum. Issuers often offer $200–500 in statement credits to keep you.` },
                 { icon: '📊', text: `Use this analysis every quarter to spot subscription creep — unused recurring charges compound quickly.` },
               ].map(({ icon, text }, i) => (

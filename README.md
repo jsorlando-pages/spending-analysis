@@ -53,7 +53,7 @@ High-level household snapshot:
 - **Donut chart** — top 10 categories by spend (remaining categories collapsed into an "N more" slice)
 - **Stacked bar chart** — monthly spend broken out by card (Amex / Apple Card / Chase)
 - **Card totals** — annual spend per card with color-coded badges
-- **Cardholder split** — per-person spend with progress bars (Jonathan / Ashleigh), shown only when multiple cardholders are present
+- **Cardholder split** — per-person spend with progress bars, shown only when multiple cardholders are present (names pulled directly from the CSV)
 
 ### Categories
 
@@ -90,7 +90,7 @@ Hardcoded analysis cards with reward optimization math specific to the household
 - Card fee and interest flagging
 - Transit spending patterns
 - Recurring charge identification
-- Category-specific observations (e.g. Hermès spend, pet care costs)
+- Category-specific observations (e.g. high retail spend, pet care costs, health & medical)
 
 ---
 
@@ -142,19 +142,19 @@ Hosted on AWS using a fully private architecture:
 Browser → Route 53 → CloudFront (HTTPS, ACM cert) → S3 (private bucket, OAC)
 ```
 
-- **S3 bucket**: `spending-analysis-jsorlando` (us-east-1), all public access blocked
-- **CloudFront**: distribution `E1M5T97D4P6SIS`, PriceClass_100 (US/EU), HTTP → HTTPS redirect
-- **ACM certificate**: `expenses.jsorlando.com`, DNS-validated via Route 53
+- **S3 bucket**: private, all public access blocked
+- **CloudFront**: PriceClass_100 (US/EU), HTTP → HTTPS redirect
+- **ACM certificate**: DNS-validated via Route 53
 - **Origin Access Control**: only the CloudFront distribution can read from S3
 
 ### Deploying Updates
 
 ```bash
 # Upload new version
-aws s3 cp index.html s3://spending-analysis-jsorlando/index.html --content-type "text/html"
+aws s3 cp index.html s3://<your-bucket>/index.html --content-type "text/html"
 
 # Invalidate CloudFront cache
-aws cloudfront create-invalidation --distribution-id E1M5T97D4P6SIS --paths "/*"
+aws cloudfront create-invalidation --distribution-id <your-distribution-id> --paths "/*"
 ```
 
 ---
