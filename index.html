@@ -228,6 +228,42 @@
     };
 
     // ─────────────────────────────────────────
+    //  REWARD RATES (for What-If analysis)
+    //  Effective reward % = multiplier × assumed 1.5¢/point (MR/UR)
+    // ─────────────────────────────────────────
+    const CARD_CATEGORY_RATES = {
+      'Amex': {
+        'Dining & Restaurants': 6.0,  // 4× MR × 1.5¢
+        'Coffee':               6.0,  // 4× MR (dining category)
+        'Groceries':            6.0,  // 4× MR on US supermarkets
+        'Travel & Transport':   7.5,  // 5× MR on flights/hotels via Amex Travel
+        '_default':             1.5,  // 1× MR
+      },
+      'Apple Card': {
+        '_default':             2.0,  // 2% everywhere
+      },
+      'Chase': {
+        'Dining & Restaurants': 4.5,  // 3× UR × 1.5¢
+        'Coffee':               4.5,  // 3× UR (dining)
+        'Travel & Transport':   4.5,  // 3× UR × 1.5¢
+        '_default':             1.5,  // 1× UR
+      },
+    };
+
+    const OPTIMAL_RATES = {
+      'Dining & Restaurants': { pct: 6.0,  card: 'Amex Gold',         desc: '4× MR' },
+      'Coffee':               { pct: 6.0,  card: 'Amex Gold',         desc: '4× MR (dining category)' },
+      'Groceries':            { pct: 6.0,  card: 'Amex Gold',         desc: '4× MR on US supermarkets' },
+      'Travel & Transport':   { pct: 7.5,  card: 'Amex Platinum',     desc: '5× MR on flights/hotels' },
+      'Subscriptions':        { pct: 6.0,  card: 'Amex BCP',          desc: '6% on US streaming' },
+      'Entertainment & Sports': { pct: 4.5, card: 'Chase Sapphire',   desc: '3× UR' },
+      'Utilities':            { pct: 5.0,  card: 'Chase Freedom Flex', desc: '5% rotating (when active)' },
+      'Technology':           { pct: 3.0,  card: 'Apple Card',        desc: '3% on Apple; 2% otherwise' },
+      'Wine & Spirits':       { pct: 6.0,  card: 'Amex Gold',         desc: '4× MR (wine bars = dining)' },
+      '_default':             { pct: 2.0,  card: 'Apple Card / Citi', desc: '2% flat rate' },
+    };
+
+    // ─────────────────────────────────────────
     //  CSV PARSING
     // ─────────────────────────────────────────
 
@@ -1230,6 +1266,104 @@
       );
     }
 
+    const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function DayOfWeekChart({ transactions }) {
+      const ref = useRef();
+      const chartInst = useRef(null);
+
+      const dayData = useMemo(() => {
+        const totals = Array(7).fill(0);
+        const counts = Array(7).fill(0);
+        transactions.forEach(t => {
+          const d = new Date(t.year, t.month - 1, t.day);
+          const dow = d.getDay();
+          totals[dow] += t.amount;
+          counts[dow]++;
+        });
+        return DAYS_OF_WEEK.map((day, i) => ({ day, total: totals[i], count: counts[i] }));
+      }, [transactions]);
+
+      useEffect(() => {
+        if (!ref.current) return;
+        if (chartInst.current) chartInst.current.destroy();
+        const maxVal = Math.max(...dayData.map(d => d.total), 1);
+        chartInst.current = new Chart(ref.current, {
+          type: 'bar',
+          data: {
+            labels: dayData.map(d => d.day),
+            datasets: [{
+              label: 'Total Spend',
+              data: dayData.map(d => d.total),
+              backgroundColor: dayData.map(d => {
+                const intensity = d.total / maxVal;
+                return `rgba(99, 102, 241, ${0.25 + intensity * 0.75})`;
+              }),
+              borderColor: '#6366f1',
+              borderWidth: 1,
+              borderRadius: 6,
+            }],
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => [
+                    ` ${fmtD(ctx.raw)}`,
+                    ` ${dayData[ctx.dataIndex].count} transactions`,
+                    ` avg ${fmtD(dayData[ctx.dataIndex].count > 0 ? ctx.raw / dayData[ctx.dataIndex].count : 0)}/tx`,
+                  ]
+                }
+              }
+            },
+            scales: {
+              x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+              y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', callback: v => fmtK(v) } },
+            },
+            animation: { duration: 500 },
+          }
+        });
+        return () => { if (chartInst.current) chartInst.current.destroy(); };
+      }, [JSON.stringify(dayData)]);
+
+      const sorted = [...dayData].sort((a, b) => b.total - a.total);
+      const peak = sorted[0];
+      const lightest = sorted[sorted.length - 1];
+
+      return (
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div className="section-title" style={{ marginBottom: 2 }}>Spending by Day of Week</div>
+              <div style={{ color: '#64748b', fontSize: 13 }}>Total charged across all cards by weekday</div>
+            </div>
+            <div style={{ display: 'flex', gap: 20 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>Biggest day</div>
+                <div style={{ fontWeight: 700, color: '#6366f1' }}>{peak?.day} · {fmtK(peak?.total || 0)}</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>Lightest day</div>
+                <div style={{ fontWeight: 700, color: '#475569' }}>{lightest?.day} · {fmtK(lightest?.total || 0)}</div>
+              </div>
+            </div>
+          </div>
+          <div style={{ height: 220 }}><canvas ref={ref} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginTop: 14 }}>
+            {dayData.map(({ day, total, count }) => (
+              <div key={day} style={{ textAlign: 'center', padding: '8px 4px', background: '#0f172a', borderRadius: 8 }}>
+                <div style={{ color: '#64748b', fontSize: 11, marginBottom: 2 }}>{day}</div>
+                <div style={{ fontWeight: 700, color: total > 0 ? '#e2e8f0' : '#334155', fontSize: 13 }}>{total > 0 ? fmtK(total) : '—'}</div>
+                <div style={{ color: '#475569', fontSize: 10 }}>{count} tx</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     function TrendsTab({ transactions, monthlyByCard, topMerchants, monthKeys }) {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1252,6 +1386,7 @@
             </div>
           </div>
           <CategoryHeatmap transactions={transactions} monthKeys={monthKeys} />
+          <DayOfWeekChart transactions={transactions} />
           <div className="card">
             <div className="section-title">Top Merchants by Spend</div>
             <HBarChart items={topMerchants} />
@@ -1493,6 +1628,89 @@
               {headline && <div style={{ fontWeight: 700, fontSize: 20, color: tagColor, marginBottom: 6 }}>{headline}</div>}
               <div style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6 }}>{body}</div>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    function WhatIfSection({ transactions }) {
+      const rows = useMemo(() => {
+        const byCat = {};
+        transactions.forEach(t => {
+          if (!byCat[t.category]) byCat[t.category] = { total: 0, byCard: {} };
+          byCat[t.category].total += t.amount;
+          byCat[t.category].byCard[t.card] = (byCat[t.category].byCard[t.card] || 0) + t.amount;
+        });
+        return Object.entries(byCat)
+          .map(([category, { total, byCard }]) => {
+            let actualRewards = 0;
+            Object.entries(byCard).forEach(([card, amt]) => {
+              const cardRates = CARD_CATEGORY_RATES[card] || {};
+              const pct = (cardRates[category] ?? cardRates['_default'] ?? 1.5) / 100;
+              actualRewards += amt * pct;
+            });
+            const actualPct = total > 0 ? (actualRewards / total) * 100 : 0;
+            const optimal = OPTIMAL_RATES[category] || OPTIMAL_RATES['_default'];
+            const optimalRewards = total * (optimal.pct / 100);
+            const gap = optimalRewards - actualRewards;
+            return { category, total, actualPct, optimal, gap };
+          })
+          .filter(r => r.total >= 300 && r.gap > 15)
+          .sort((a, b) => b.gap - a.gap);
+      }, [transactions]);
+
+      if (!rows.length) return null;
+      const totalGap = rows.reduce((s, r) => s + r.gap, 0);
+
+      return (
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div>
+              <div className="section-title" style={{ marginBottom: 2 }}>🎯 What-If: Optimal Card Routing</div>
+              <div style={{ color: '#64748b', fontSize: 13 }}>How much more you'd earn if every purchase went to the best available card for that category</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#22c55e' }}>{fmt(totalGap)}</div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>additional annual opportunity</div>
+            </div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#0a0f1e' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 16px', color: '#475569', fontWeight: 600 }}>Category</th>
+                  <th style={{ textAlign: 'right', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Spend</th>
+                  <th style={{ textAlign: 'right', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Current Rate</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Best Card</th>
+                  <th style={{ textAlign: 'right', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Best Rate</th>
+                  <th style={{ textAlign: 'right', padding: '10px 16px', color: '#475569', fontWeight: 600 }}>Gap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ category, total, actualPct, optimal, gap }, i) => {
+                  const cfg = CATEGORY_CONFIG[category] || CATEGORY_CONFIG['Other'];
+                  return (
+                    <tr key={category} style={{ borderTop: '1px solid #1e293b', background: i % 2 === 0 ? 'transparent' : '#ffffff04' }}>
+                      <td style={{ padding: '10px 16px', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: cfg.color }}>{cfg.icon}</span>{' '}
+                        <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{category}</span>
+                      </td>
+                      <td style={{ textAlign: 'right', padding: '10px 12px', color: '#94a3b8' }}>{fmt(total)}</td>
+                      <td style={{ textAlign: 'right', padding: '10px 12px', color: '#64748b' }}>{actualPct.toFixed(1)}%</td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <div style={{ color: '#e2e8f0', fontWeight: 600 }}>{optimal.card}</div>
+                        <div style={{ color: '#64748b', fontSize: 11 }}>{optimal.desc}</div>
+                      </td>
+                      <td style={{ textAlign: 'right', padding: '10px 12px', color: '#a78bfa', fontWeight: 700 }}>{optimal.pct.toFixed(1)}%</td>
+                      <td style={{ textAlign: 'right', padding: '10px 16px', color: '#22c55e', fontWeight: 800 }}>{fmt(gap)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ padding: '10px 16px', borderTop: '1px solid #1e293b', color: '#334155', fontSize: 11 }}>
+            * Current rate estimated from card × category bonus tiers. Optimal rates use best available card. Assumes ~1.5¢/MR point and ~1.5¢/UR point.
           </div>
         </div>
       );
@@ -1740,6 +1958,8 @@
               ))}
             </div>
           </div>
+
+          <WhatIfSection transactions={transactions} />
 
           <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
             * Reward estimates based on publicly available card terms. Transfer partner values and card benefits may change. Annual fees not included in opportunity calculations.
@@ -2031,6 +2251,127 @@
     }
 
     // ─────────────────────────────────────────
+    //  SUBSCRIPTIONS TAB
+    // ─────────────────────────────────────────
+
+    function SubscriptionsTab({ transactions }) {
+      const [tags, setTags] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('spending-sub-tags') || '{}'); }
+        catch { return {}; }
+      });
+
+      const setTag = useCallback((key, tag) => {
+        setTags(prev => {
+          const next = { ...prev };
+          if (tag === undefined) delete next[key];
+          else next[key] = tag;
+          localStorage.setItem('spending-sub-tags', JSON.stringify(next));
+          return next;
+        });
+      }, []);
+
+      const subs = useMemo(() => {
+        const groups = {};
+        transactions.forEach(t => {
+          const key = normalizeForGrouping(t._merchantKey || cleanMerchant(t.merchant || t.description));
+          if (!groups[key]) groups[key] = { key, transactions: [], months: new Set(), category: t.category };
+          groups[key].transactions.push(t);
+          groups[key].months.add(t.monthKey);
+          // keep the most specific category if known
+          if (t.category === 'Subscriptions') groups[key].category = 'Subscriptions';
+        });
+        return Object.values(groups)
+          .filter(g => g.months.size >= 2 || g.category === 'Subscriptions')
+          .map(g => {
+            const amounts = g.transactions.map(t => t.amount);
+            const total = amounts.reduce((s, v) => s + v, 0);
+            const avgAmt = total / amounts.length;
+            const minAmt = Math.min(...amounts);
+            const maxAmt = Math.max(...amounts);
+            const consistent = maxAmt > 0 && (maxAmt - minAmt) / maxAmt < 0.15;
+            const monthlyEst = g.months.size > 0 ? total / g.months.size : avgAmt;
+            return { key: g.key, category: g.category, months: g.months.size, total, avgAmt, monthlyEst, consistent, count: g.transactions.length };
+          })
+          .sort((a, b) => b.monthlyEst - a.monthlyEst);
+      }, [transactions]);
+
+      const cancelTotal = subs.filter(s => tags[s.key] === 'cancel').reduce((sum, s) => sum + s.monthlyEst * 12, 0);
+      const annualTotal = subs.reduce((s, r) => s + r.monthlyEst * 12, 0);
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Summary banner */}
+          <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid #2d3f5a', borderRadius: 16, padding: 20, display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div>
+              <div style={{ color: '#64748b', fontSize: 12, marginBottom: 2 }}>Recurring charges detected</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: '#e2e8f0' }}>{subs.length}</div>
+            </div>
+            <div>
+              <div style={{ color: '#64748b', fontSize: 12, marginBottom: 2 }}>Combined annual est.</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: '#e2e8f0' }}>{fmt(annualTotal)}</div>
+            </div>
+            {cancelTotal > 0 && (
+              <div style={{ marginLeft: 'auto' }}>
+                <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 2 }}>Marked to cancel (annual)</div>
+                <div style={{ fontSize: 32, fontWeight: 800, color: '#ef4444' }}>{fmt(cancelTotal)}</div>
+              </div>
+            )}
+          </div>
+
+          {/* List */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b' }}>
+              <div className="section-title" style={{ marginBottom: 2 }}>Recurring Charges</div>
+              <div style={{ fontSize: 13, color: '#64748b' }}>Merchants detected in 2+ months. Tag each as Keep, Review, or Cancel to track your subscriptions.</div>
+            </div>
+            {subs.map(sub => {
+              const cfg = CATEGORY_CONFIG[sub.category] || CATEGORY_CONFIG['Other'];
+              const tag = tags[sub.key];
+              const tagColors = { keep: '#22c55e', review: '#f59e0b', cancel: '#ef4444' };
+              const rowBorder = tag ? `2px solid ${tagColors[tag]}22` : '1px solid #0f172a';
+              return (
+                <div key={sub.key} style={{ padding: '14px 20px', borderBottom: rowBorder, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', transition: 'background 0.2s', background: tag === 'cancel' ? '#ef444408' : tag === 'keep' ? '#22c55e08' : 'transparent' }}>
+                  <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, color: '#e2e8f0', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.key}</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{ fontSize: 11, background: cfg.color + '22', color: cfg.color, padding: '1px 7px', borderRadius: 999, fontWeight: 600 }}>{cfg.icon} {sub.category}</span>
+                      <span style={{ fontSize: 11, color: '#64748b' }}>{sub.months} of 12 months · {sub.count} charges</span>
+                      {sub.consistent && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>✓ consistent</span>}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontWeight: 800, color: '#f1f5f9', fontSize: 15 }}>
+                      {fmt(sub.monthlyEst)}<span style={{ fontWeight: 400, color: '#64748b', fontSize: 11 }}>/mo est.</span>
+                    </div>
+                    <div style={{ color: '#475569', fontSize: 12 }}>{fmt(sub.total)} total · {fmt(sub.monthlyEst * 12)}/yr</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                    {[['keep', '✓ Keep', '#22c55e'], ['review', '? Review', '#f59e0b'], ['cancel', '✕ Cancel', '#ef4444']].map(([t, label, color]) => (
+                      <button
+                        key={t}
+                        onClick={() => setTag(sub.key, tag === t ? undefined : t)}
+                        style={{
+                          padding: '4px 11px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+                          border: `1px solid ${tag === t ? color : '#1e293b'}`,
+                          background: tag === t ? color + '22' : 'transparent',
+                          color: tag === t ? color : '#475569',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                      >{label}</button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '4px 0' }}>
+            Tags are saved locally in your browser. Merchants appearing in 2+ months are included regardless of category.
+          </div>
+        </div>
+      );
+    }
+
+    // ─────────────────────────────────────────
     //  APP
     // ─────────────────────────────────────────
 
@@ -2211,12 +2552,13 @@
 
       const overrideCount = Object.keys(overrides).length;
       const tabs = [
-        { id: 'overview',      label: '📊 Overview' },
-        { id: 'categories',    label: '🏷️ Categories' },
-        { id: 'trends',        label: '📈 Trends' },
-        { id: 'transactions',  label: overrideCount > 0 ? `🧾 Transactions · 🧠 ${overrideCount} learned` : '🧾 Transactions' },
-        { id: 'insights',      label: '💡 Insights' },
-        { id: 'tax',           label: '🧾 Tax' },
+        { id: 'overview',       label: '📊 Overview' },
+        { id: 'categories',     label: '🏷️ Categories' },
+        { id: 'trends',         label: '📈 Trends' },
+        { id: 'transactions',   label: overrideCount > 0 ? `🧾 Transactions · 🧠 ${overrideCount} learned` : '🧾 Transactions' },
+        { id: 'insights',       label: '💡 Insights' },
+        { id: 'subscriptions',  label: '🔁 Subscriptions' },
+        { id: 'tax',            label: '🧾 Tax' },
       ];
 
       const totalSpend = transactions.reduce((s,t) => s+t.amount, 0);
@@ -2269,12 +2611,13 @@
 
           {/* Content */}
           <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px' }} className="fade-in" key={activeTab}>
-            {activeTab === 'overview'     && <OverviewTab transactions={effectiveTxs} categoryData={categoryData} monthlyByCard={monthlyByCard} cardData={cardData} cardHolderData={cardHolderData} monthKeys={monthKeys} />}
-            {activeTab === 'categories'   && <CategoriesTab categoryData={categoryData} transactions={effectiveTxs} />}
-            {activeTab === 'trends'       && <TrendsTab transactions={effectiveTxs} monthlyByCard={monthlyByCard} topMerchants={topMerchants} monthKeys={monthKeys} />}
-            {activeTab === 'transactions' && <TransactionsTab transactions={effectiveTxs} overrides={overrides} onOverride={handleOverride} onResetAll={handleResetAll} />}
-            {activeTab === 'insights'     && <InsightsTab transactions={effectiveTxs} categoryData={categoryData} topMerchants={topMerchants} />}
-            {activeTab === 'tax'          && <TaxTab transactions={effectiveTxs} dataYear={dataYear} />}
+            {activeTab === 'overview'       && <OverviewTab transactions={effectiveTxs} categoryData={categoryData} monthlyByCard={monthlyByCard} cardData={cardData} cardHolderData={cardHolderData} monthKeys={monthKeys} />}
+            {activeTab === 'categories'     && <CategoriesTab categoryData={categoryData} transactions={effectiveTxs} />}
+            {activeTab === 'trends'         && <TrendsTab transactions={effectiveTxs} monthlyByCard={monthlyByCard} topMerchants={topMerchants} monthKeys={monthKeys} />}
+            {activeTab === 'transactions'   && <TransactionsTab transactions={effectiveTxs} overrides={overrides} onOverride={handleOverride} onResetAll={handleResetAll} />}
+            {activeTab === 'insights'       && <InsightsTab transactions={effectiveTxs} categoryData={categoryData} topMerchants={topMerchants} />}
+            {activeTab === 'subscriptions'  && <SubscriptionsTab transactions={effectiveTxs} />}
+            {activeTab === 'tax'            && <TaxTab transactions={effectiveTxs} dataYear={dataYear} />}
           </div>
 
           {/* Toast notification */}
