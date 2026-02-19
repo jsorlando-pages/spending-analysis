@@ -9,19 +9,40 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    /* ── Theme tokens ─────────────────────────────── */
+    :root {
+      --bg-base:    #0a0f1e; --bg-deep:    #0f172a; --bg-mid:     #111827;
+      --border:     #1e293b; --border-mid: #334155; --input-bg:   #1e293b;
+      --text-hi:    #f1f5f9; --text-base:  #e2e8f0; --text-sub:   #94a3b8;
+      --text-muted: #64748b; --text-dim:   #475569; --text-faint: #334155;
+      --chart-grid: rgba(255,255,255,0.05);
+      --banner-bg: linear-gradient(135deg, #1e3a5f 0%, #1a2b4a 100%);
+      --banner-border: #2d4f7a;
+    }
+    [data-theme="light"] {
+      --bg-base:    #f0f4f8; --bg-deep:    #f8fafc; --bg-mid:     #ffffff;
+      --border:     #e2e8f0; --border-mid: #cbd5e1; --input-bg:   #ffffff;
+      --text-hi:    #0f172a; --text-base:  #1e293b; --text-sub:   #475569;
+      --text-muted: #64748b; --text-dim:   #94a3b8; --text-faint: #cbd5e1;
+      --chart-grid: rgba(0,0,0,0.07);
+      --banner-bg: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+      --banner-border: #bfdbfe;
+    }
+    /* ── Base ─────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-size: 16px; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #0a0f1e;
-      color: #e2e8f0;
+      background: var(--bg-base);
+      color: var(--text-base);
       min-height: 100vh;
       line-height: 1.5;
+      transition: background 0.25s, color 0.25s;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
     .fade-in { animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .pulse { animation: pulse 2s infinite; }
@@ -30,18 +51,18 @@
     table { border-collapse: collapse; width: 100%; }
     th, td { text-align: left; }
     select, input[type=text], input[type=search] {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #e2e8f0;
+      background: var(--input-bg);
+      border: 1px solid var(--border-mid);
+      color: var(--text-base);
       border-radius: 8px;
       padding: 8px 12px;
       font-size: 14px;
       outline: none;
     }
     select:focus, input[type=text]:focus, input[type=search]:focus { border-color: #3b82f6; }
-    select option { background: #1e293b; }
+    select option { background: var(--bg-mid); color: var(--text-base); }
     .cat-select {
-      background: #1e293b; border: 1px solid #3b82f6; color: #e2e8f0;
+      background: var(--input-bg); border: 1px solid #3b82f6; color: var(--text-base);
       border-radius: 8px; padding: 4px 8px; font-size: 12px; outline: none;
       cursor: pointer; max-width: 210px;
     }
@@ -50,11 +71,11 @@
       padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
       cursor: pointer; transition: opacity 0.15s, filter 0.15s; white-space: nowrap;
     }
-    .cat-badge:hover { filter: brightness(1.15); }
+    .cat-badge:hover { filter: brightness(1.1); }
     button { cursor: pointer; border: none; font-family: inherit; }
     .tab-btn {
       background: transparent;
-      color: #94a3b8;
+      color: var(--text-sub);
       padding: 10px 20px;
       border-radius: 8px;
       font-size: 14px;
@@ -62,98 +83,71 @@
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .tab-btn:hover { background: #1e293b; color: #e2e8f0; }
+    .tab-btn:hover { background: var(--border); color: var(--text-base); }
     .tab-btn.active { background: #1e40af; color: #fff; }
     .card {
-      background: #111827;
-      border: 1px solid #1e293b;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
       border-radius: 16px;
       padding: 24px;
     }
     .card-sm {
-      background: #111827;
-      border: 1px solid #1e293b;
+      background: var(--bg-mid);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 16px;
     }
     .upload-zone {
-      border: 2px dashed #334155;
+      border: 2px dashed var(--border-mid);
       border-radius: 16px;
       padding: 32px 24px;
       text-align: center;
       cursor: pointer;
       transition: all 0.25s;
-      background: #111827;
+      background: var(--bg-mid);
       position: relative;
     }
-    .upload-zone:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.06); }
+    .upload-zone:hover { border-color: #3b82f6; background: rgba(59,130,246,0.06); }
     .upload-zone.loaded { border-style: solid; }
-    .upload-zone.drag { border-color: #60a5fa; background: rgba(59, 130, 246, 0.1); }
-    .badge {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .progress-bar-wrap { background: #1e293b; border-radius: 999px; height: 8px; overflow: hidden; }
+    .upload-zone.drag { border-color: #60a5fa; background: rgba(59,130,246,0.1); }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .progress-bar-wrap { background: var(--border); border-radius: 999px; height: 8px; overflow: hidden; }
     .progress-bar { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
     .tx-row { transition: background 0.15s; }
-    .tx-row:hover { background: #1e293b; }
+    .tx-row:hover { background: var(--border); }
     .insight-card {
-      background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
-      border: 1px solid #1e293b;
+      background: linear-gradient(135deg, var(--bg-mid) 0%, var(--bg-deep) 100%);
+      border: 1px solid var(--border);
       border-radius: 16px;
       padding: 20px;
       transition: transform 0.2s, border-color 0.2s;
     }
-    .insight-card:hover { transform: translateY(-2px); border-color: #334155; }
+    .insight-card:hover { transform: translateY(-2px); border-color: var(--border-mid); }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
     @media (max-width: 1100px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
-    .stat-card {
-      background: #111827;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
-      padding: 20px 24px;
-    }
-    .section-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #f1f5f9;
-      margin-bottom: 16px;
-      letter-spacing: -0.01em;
-    }
-    .text-xs { font-size: 12px; }
-    .text-sm { font-size: 14px; }
-    .text-base { font-size: 16px; }
-    .text-lg { font-size: 18px; }
-    .text-xl { font-size: 20px; }
-    .text-2xl { font-size: 24px; }
-    .text-3xl { font-size: 30px; }
-    .font-semibold { font-weight: 600; }
-    .font-bold { font-weight: 700; }
-    .text-muted { color: #64748b; }
-    .text-secondary { color: #94a3b8; }
-    .flex { display: flex; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .gap-2 { gap: 8px; }
-    .gap-3 { gap: 12px; }
-    .gap-4 { gap: 16px; }
-    .mt-1 { margin-top: 4px; }
-    .mt-2 { margin-top: 8px; }
-    .mt-3 { margin-top: 12px; }
-    .mt-4 { margin-top: 16px; }
-    .mb-4 { margin-bottom: 16px; }
-    .mb-6 { margin-bottom: 24px; }
-    .rounded { border-radius: 8px; }
-    .rounded-full { border-radius: 999px; }
-    .w-full { width: 100%; }
-    .overflow-x-auto { overflow-x: auto; }
+    .stat-card { background: var(--bg-mid); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; }
+    .section-title { font-size: 18px; font-weight: 700; color: var(--text-hi); margin-bottom: 16px; letter-spacing: -0.01em; }
+    .text-xs { font-size: 12px; } .text-sm { font-size: 14px; } .text-base { font-size: 16px; }
+    .text-lg { font-size: 18px; } .text-xl { font-size: 20px; } .text-2xl { font-size: 24px; } .text-3xl { font-size: 30px; }
+    .font-semibold { font-weight: 600; } .font-bold { font-weight: 700; }
+    .text-muted { color: var(--text-muted); } .text-secondary { color: var(--text-sub); }
+    .flex { display: flex; } .items-center { align-items: center; } .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; } .gap-3 { gap: 12px; } .gap-4 { gap: 16px; }
+    .mt-1 { margin-top: 4px; } .mt-2 { margin-top: 8px; } .mt-3 { margin-top: 12px; } .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; } .mb-6 { margin-bottom: 24px; }
+    .rounded { border-radius: 8px; } .rounded-full { border-radius: 999px; }
+    .w-full { width: 100%; } .overflow-x-auto { overflow-x: auto; }
     .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* ── Theme toggle ─────────────────────────────── */
+    .theme-toggle {
+      background: var(--border); border: 1px solid var(--border-mid);
+      color: var(--text-sub); border-radius: 8px; padding: 6px 12px;
+      font-size: 13px; font-weight: 600; transition: all 0.2s; flex-shrink: 0;
+    }
+    .theme-toggle:hover { border-color: #3b82f6; color: var(--text-base); }
   </style>
 </head>
 <body>
@@ -161,6 +155,7 @@
 
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
+    const ThemeCtx = React.createContext(true); // true = dark
 
     // ─────────────────────────────────────────
     //  CONSTANTS
@@ -182,14 +177,14 @@
       'Dry Cleaning':           { icon: '👔', color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
       'Coffee':                 { icon: '☕', color: '#92400e', bg: 'rgba(146,64,14,0.12)'  },
       'Wine & Spirits':         { icon: '🍷', color: '#9f1239', bg: 'rgba(159,18,57,0.12)'  },
-      'Insurance':              { icon: '🛡️', color: '#475569', bg: 'rgba(71,85,105,0.12)'  },
+      'Insurance':              { icon: '🛡️', color: 'var(--text-dim)', bg: 'rgba(71,85,105,0.12)'  },
       'Charity & Donations':    { icon: '🎗️', color: '#0d9488', bg: 'rgba(13,148,136,0.12)' },
       'Flowers & Gifts':        { icon: '💐', color: '#db2777', bg: 'rgba(219,39,119,0.12)'  },
       'Auto Maintenance':       { icon: '🔧', color: '#b45309', bg: 'rgba(180,83,9,0.12)'    },
       'Utilities':              { icon: '⚡', color: '#d97706', bg: 'rgba(217,119,6,0.12)'   },
       'Subscriptions':          { icon: '📱', color: '#14b8a6', bg: 'rgba(20,184,166,0.12)'  },
       'Fees & Interest':        { icon: '💸', color: '#6b7280', bg: 'rgba(107,114,128,0.12)' },
-      'Other':                  { icon: '📋', color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' },
+      'Other':                  { icon: '📋', color: 'var(--text-sub)', bg: 'rgba(148,163,184,0.12)' },
     };
 
     const CARD_CONFIG = {
@@ -674,9 +669,25 @@
     //  CHART COMPONENTS
     // ─────────────────────────────────────────
 
+    function useChartColors() {
+      const isDark = React.useContext(ThemeCtx);
+      return {
+        grid:    isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.07)',
+        tick:    isDark ? '#94a3b8' : '#64748b',
+        legend:  isDark ? '#94a3b8' : '#64748b',
+        ttBg:    isDark ? '#1e293b' : '#ffffff',
+        ttBor:   isDark ? '#334155' : '#e2e8f0',
+        ttTitle: isDark ? '#f1f5f9' : '#0f172a',
+        ttBody:  isDark ? '#94a3b8' : '#475569',
+        border:  isDark ? '#0a0f1e' : '#f0f4f8',
+      };
+    }
+
     function DonutChart({ data, size = 220 }) {
       const ref = useRef();
       const chartInst = useRef();
+      const isDark = React.useContext(ThemeCtx);
+      const cc = useChartColors();
       useEffect(() => {
         if (!ref.current || !data.length) return;
         if (chartInst.current) chartInst.current.destroy();
@@ -687,9 +698,9 @@
             labels: data.map(d => d.category),
             datasets: [{
               data: data.map(d => d.total),
-              backgroundColor: data.map(d => d._overflow ? '#475569' : (CATEGORY_CONFIG[d.category]?.color || '#94a3b8')),
+              backgroundColor: data.map(d => d._overflow ? '#64748b' : (CATEGORY_CONFIG[d.category]?.color || '#94a3b8')),
               borderWidth: 2,
-              borderColor: '#0a0f1e',
+              borderColor: cc.border,
               hoverBorderColor: '#fff',
               hoverBorderWidth: 2,
             }]
@@ -700,28 +711,24 @@
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: '#1e293b',
-                borderColor: '#334155',
-                borderWidth: 1,
-                titleColor: '#f1f5f9',
-                bodyColor: '#94a3b8',
-                padding: 12,
-                callbacks: {
-                  label: ctx => ` ${fmtD(ctx.raw)}  (${((ctx.raw / data.reduce((s,d)=>s+d.total,0))*100).toFixed(1)}%)`,
-                }
+                backgroundColor: cc.ttBg, borderColor: cc.ttBor, borderWidth: 1,
+                titleColor: cc.ttTitle, bodyColor: cc.ttBody, padding: 12,
+                callbacks: { label: ctx => ` ${fmtD(ctx.raw)}  (${((ctx.raw / data.reduce((s,d)=>s+d.total,0))*100).toFixed(1)}%)` }
               }
             },
             animation: { animateRotate: true, duration: 600 }
           }
         });
         return () => { if (chartInst.current) chartInst.current.destroy(); };
-      }, [JSON.stringify(data)]);
+      }, [JSON.stringify(data), isDark]);
       return <canvas ref={ref} width={size} height={size} style={{ display: 'block' }} />;
     }
 
     function MonthlyBarChart({ monthlyByCard, monthKeys }) {
       const ref = useRef();
       const chartInst = useRef();
+      const isDark = React.useContext(ThemeCtx);
+      const cc = useChartColors();
       useEffect(() => {
         if (!ref.current) return;
         if (chartInst.current) chartInst.current.destroy();
@@ -737,19 +744,16 @@
             ]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             scales: {
-              x: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 12 } } },
-              y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' },
-                   ticks: { color: '#64748b', font: { size: 12 }, callback: v => fmtK(v) },
-                   border: { display: false } }
+              x: { stacked: true, grid: { color: cc.grid }, ticks: { color: cc.tick, font: { size: 12 } } },
+              y: { stacked: true, grid: { color: cc.grid }, ticks: { color: cc.tick, font: { size: 12 }, callback: v => fmtK(v) }, border: { display: false } }
             },
             plugins: {
-              legend: { labels: { color: '#94a3b8', font: { size: 12 }, boxWidth: 12, boxHeight: 12 } },
+              legend: { labels: { color: cc.legend, font: { size: 12 }, boxWidth: 12, boxHeight: 12 } },
               tooltip: {
-                backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1,
-                titleColor: '#f1f5f9', bodyColor: '#94a3b8', padding: 12,
+                backgroundColor: cc.ttBg, borderColor: cc.ttBor, borderWidth: 1,
+                titleColor: cc.ttTitle, bodyColor: cc.ttBody, padding: 12,
                 mode: 'index', intersect: false,
                 callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmtD(ctx.raw)}` }
               }
@@ -758,13 +762,15 @@
           }
         });
         return () => { if (chartInst.current) chartInst.current.destroy(); };
-      }, [JSON.stringify(monthlyByCard)]);
+      }, [JSON.stringify(monthlyByCard), isDark]);
       return <div style={{ height: 280 }}><canvas ref={ref} /></div>;
     }
 
     function HBarChart({ items }) {
       const ref = useRef();
       const chartInst = useRef();
+      const isDark = React.useContext(ThemeCtx);
+      const cc = useChartColors();
       useEffect(() => {
         if (!ref.current || !items.length) return;
         if (chartInst.current) chartInst.current.destroy();
@@ -781,18 +787,16 @@
             }]
           },
           options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
             scales: {
-              x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 12 }, callback: v => fmtK(v) }, border: { display: false } },
-              y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 12 } } }
+              x: { grid: { color: cc.grid }, ticks: { color: cc.tick, font: { size: 12 }, callback: v => fmtK(v) }, border: { display: false } },
+              y: { grid: { display: false }, ticks: { color: cc.tick, font: { size: 12 } } }
             },
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1,
-                titleColor: '#f1f5f9', bodyColor: '#94a3b8', padding: 12,
+                backgroundColor: cc.ttBg, borderColor: cc.ttBor, borderWidth: 1,
+                titleColor: cc.ttTitle, bodyColor: cc.ttBody, padding: 12,
                 callbacks: { label: ctx => ` ${fmtD(ctx.raw)} (${top[ctx.dataIndex].count} transactions)` }
               }
             },
@@ -800,7 +804,7 @@
           }
         });
         return () => { if (chartInst.current) chartInst.current.destroy(); };
-      }, [JSON.stringify(items)]);
+      }, [JSON.stringify(items), isDark]);
       return <div style={{ height: Math.max(240, items.slice(0,12).length * 32 + 40) }}><canvas ref={ref} /></div>;
     }
 
@@ -818,11 +822,11 @@
       const [cardName, setCardName] = useState('');
       const submit = () => { const v = cardName.trim(); if (v) onAssignCard(p.id, v); };
       return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#111827', border: '1px solid #f59e0b44', borderRadius: 10, padding: '12px 16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-mid)', border: '1px solid #f59e0b44', borderRadius: 10, padding: '12px 16px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 20 }}>⚠️</span>
           <div style={{ flex: 1, minWidth: 160 }}>
             <div style={{ fontWeight: 600, color: '#f59e0b', fontSize: 13 }}>Identify this card</div>
-            <div style={{ color: '#64748b', fontSize: 12 }} className="truncate">{p.name}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12 }} className="truncate">{p.name}</div>
           </div>
           <input
             type="text"
@@ -830,17 +834,17 @@
             value={cardName}
             onChange={e => setCardName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && submit()}
-            style={{ background: '#1e293b', border: '1px solid #f59e0b', color: '#e2e8f0', borderRadius: 8, padding: '6px 10px', fontSize: 13, outline: 'none', minWidth: 220, flex: '1 1 220px' }}
+            style={{ background: 'var(--border)', border: '1px solid #f59e0b', color: 'var(--text-base)', borderRadius: 8, padding: '6px 10px', fontSize: 13, outline: 'none', minWidth: 220, flex: '1 1 220px' }}
           />
           <button
             onClick={submit}
             disabled={!cardName.trim()}
-            style={{ padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: cardName.trim() ? '#f59e0b22' : 'transparent', border: `1px solid ${cardName.trim() ? '#f59e0b' : '#334155'}`, color: cardName.trim() ? '#f59e0b' : '#475569', cursor: cardName.trim() ? 'pointer' : 'default', transition: 'all 0.15s' }}
+            style={{ padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: cardName.trim() ? '#f59e0b22' : 'transparent', border: `1px solid ${cardName.trim() ? '#f59e0b' : 'var(--border-mid)'}`, color: cardName.trim() ? '#f59e0b' : 'var(--text-dim)', cursor: cardName.trim() ? 'pointer' : 'default', transition: 'all 0.15s' }}
           >Add</button>
           <button onClick={() => onRemovePending(p.id)}
-            style={{ background: 'none', color: '#475569', fontSize: 16, lineHeight: 1, padding: '2px 4px', borderRadius: 4, transition: 'color 0.15s' }}
+            style={{ background: 'none', color: 'var(--text-dim)', fontSize: 16, lineHeight: 1, padding: '2px 4px', borderRadius: 4, transition: 'color 0.15s' }}
             onMouseEnter={e => e.target.style.color='#ef4444'}
-            onMouseLeave={e => e.target.style.color='#475569'}>×</button>
+            onMouseLeave={e => e.target.style.color='var(--text-dim)'}>×</button>
         </div>
       );
     }
@@ -867,7 +871,7 @@
             <h1 style={{ fontSize: 36, fontWeight: 800, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6,#06b6d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 12 }}>
               Spending Analysis
             </h1>
-            <p style={{ color: '#94a3b8', fontSize: 16, maxWidth: 460, margin: '0 auto' }}>
+            <p style={{ color: 'var(--text-sub)', fontSize: 16, maxWidth: 460, margin: '0 auto' }}>
               Upload one or more credit card CSV exports. Amex, Apple Card, and Chase are auto-detected — anything else will prompt you to identify the card.
             </p>
           </div>
@@ -883,10 +887,10 @@
           >
             <input ref={inputRef} type="file" accept=".csv" multiple onChange={handlePick} />
             <div style={{ fontSize: 36, marginBottom: 10 }}>📂</div>
-            <div style={{ fontWeight: 700, fontSize: 17, color: '#e2e8f0', marginBottom: 6 }}>
+            <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--text-base)', marginBottom: 6 }}>
               Drop CSV files here or click to browse
             </div>
-            <div style={{ color: '#475569', fontSize: 13 }}>Select multiple files at once — each will be auto-identified</div>
+            <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>Select multiple files at once — each will be auto-identified</div>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
               {CARD_OPTIONS.map(o => (
                 <span key={o.value} style={{ background: o.color + '22', color: o.color, padding: '3px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
@@ -902,17 +906,17 @@
 
               {/* Successfully loaded */}
               {loadedFiles.map(({ key, name, cardLabel, color, emoji }) => (
-                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#111827', border: `1px solid ${color}33`, borderRadius: 10, padding: '12px 16px' }}>
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-mid)', border: `1px solid ${color}33`, borderRadius: 10, padding: '12px 16px' }}>
                   <span style={{ fontSize: 20 }}>{emoji}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, color, fontSize: 13 }}>{cardLabel}</div>
-                    <div style={{ color: '#64748b', fontSize: 12 }} className="truncate">{name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12 }} className="truncate">{name}</div>
                   </div>
                   <span style={{ background: color + '22', color, padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>Loaded ✓</span>
                   <button onClick={() => onRemoveLoaded(key)}
-                    style={{ background: 'none', color: '#475569', fontSize: 16, lineHeight: 1, padding: '2px 4px', borderRadius: 4, marginLeft: 4, transition: 'color 0.15s' }}
+                    style={{ background: 'none', color: 'var(--text-dim)', fontSize: 16, lineHeight: 1, padding: '2px 4px', borderRadius: 4, marginLeft: 4, transition: 'color 0.15s' }}
                     onMouseEnter={e => e.target.style.color='#ef4444'}
-                    onMouseLeave={e => e.target.style.color='#475569'}>×</button>
+                    onMouseLeave={e => e.target.style.color='var(--text-dim)'}>×</button>
                 </div>
               ))}
 
@@ -923,7 +927,7 @@
             </div>
           )}
 
-          <div style={{ marginTop: 40, color: '#334155', fontSize: 12, textAlign: 'center', maxWidth: 440 }}>
+          <div style={{ marginTop: 40, color: 'var(--border-mid)', fontSize: 12, textAlign: 'center', maxWidth: 440 }}>
             🔒 All processing happens locally in your browser — no data is uploaded or shared.
           </div>
         </div>
@@ -939,9 +943,9 @@
         <div className="stat-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ color: '#64748b', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{label}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#f1f5f9', letterSpacing: '-0.02em' }}>{value}</div>
-              {sub && <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>{sub}</div>}
+              <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{label}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-hi)', letterSpacing: '-0.02em' }}>{value}</div>
+              {sub && <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>{sub}</div>}
             </div>
             <div style={{ fontSize: 28, background: color + '18', borderRadius: 12, width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
           </div>
@@ -993,21 +997,21 @@
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   <DonutChart data={donutData} size={200} />
                   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                    <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>TOTAL</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.2 }}>{fmt(total)}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>TOTAL</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-hi)', lineHeight: 1.2 }}>{fmt(total)}</div>
                   </div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {donutData.map(d => {
-                  const cfg = d._overflow ? { color: '#475569', icon: '…' } : (CATEGORY_CONFIG[d.category] || CATEGORY_CONFIG['Other']);
+                  const cfg = d._overflow ? { color: 'var(--text-dim)', icon: '…' } : (CATEGORY_CONFIG[d.category] || CATEGORY_CONFIG['Other']);
                   const pct = ((d.total/total)*100).toFixed(1);
                   return (
                     <div key={d.category} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 10, height: 10, borderRadius: 3, background: cfg.color, flexShrink: 0 }} />
-                      <div style={{ flex: 1, fontSize: 12, color: d._overflow ? '#475569' : '#94a3b8', minWidth: 0 }} className="truncate">{cfg.icon} {d.category}</div>
-                      <div style={{ fontSize: 12, color: '#64748b', flexShrink: 0 }}>{pct}%</div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#e2e8f0', flexShrink: 0, width: 72, textAlign: 'right' }}>{fmt(d.total)}</div>
+                      <div style={{ flex: 1, fontSize: 12, color: d._overflow ? 'var(--text-dim)' : 'var(--text-sub)', minWidth: 0 }} className="truncate">{cfg.icon} {d.category}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>{pct}%</div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-base)', flexShrink: 0, width: 72, textAlign: 'right' }}>{fmt(d.total)}</div>
                     </div>
                   );
                 })}
@@ -1024,7 +1028,7 @@
                   const cfg = CARD_CONFIG[card];
                   return (
                     <div key={card} style={{ flex: 1, minWidth: 120, background: cfg.color + '15', border: `1px solid ${cfg.color}30`, borderRadius: 10, padding: '12px 16px' }}>
-                      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>{cfg.emoji} {cfg.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{cfg.emoji} {cfg.label}</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: cfg.color }}>{fmt(total)}</div>
                     </div>
                   );
@@ -1042,7 +1046,7 @@
                   const pct = ((amt/total)*100).toFixed(1);
                   const color = holder === 'Jonathan' ? '#3b82f6' : '#ec4899';
                   return (
-                    <div key={holder} style={{ background: '#0f172a', borderRadius: 12, padding: 20 }}>
+                    <div key={holder} style={{ background: 'var(--bg-deep)', borderRadius: 12, padding: 20 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                         <span style={{ fontWeight: 700, fontSize: 16 }}>{holder}</span>
                         <span style={{ color, fontWeight: 800, fontSize: 20 }}>{fmt(amt)}</span>
@@ -1050,7 +1054,7 @@
                       <div className="progress-bar-wrap">
                         <div className="progress-bar" style={{ width: `${pct}%`, background: color }} />
                       </div>
-                      <div style={{ color: '#64748b', fontSize: 13, marginTop: 6 }}>{pct}% of household spend</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 6 }}>{pct}% of household spend</div>
                     </div>
                   );
                 })}
@@ -1084,7 +1088,7 @@
       return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(0,0,0,0.7)' }}
           onClick={onClose}>
-          <div style={{ background: '#111827', border: '1px solid #1e293b', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
+          <div style={{ background: 'var(--bg-mid)', border: '1px solid #1e293b', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '80vh', overflow: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}
             onClick={e => e.stopPropagation()}>
 
             {/* Header */}
@@ -1093,15 +1097,15 @@
                 {cfg.icon}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 18, color: '#f1f5f9' }}>{category}</div>
-                <div style={{ color: '#64748b', fontSize: 13 }}>{catTxs.length} transactions · {fmtD(catTotal)} total</div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-hi)' }}>{category}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{catTxs.length} transactions · {fmtD(catTotal)} total</div>
               </div>
-              <button onClick={onClose} style={{ background: '#1e293b', color: '#94a3b8', borderRadius: 8, padding: '6px 10px', fontSize: 18, lineHeight: 1 }}>×</button>
+              <button onClick={onClose} style={{ background: 'var(--border)', color: 'var(--text-sub)', borderRadius: 8, padding: '6px 10px', fontSize: 18, lineHeight: 1 }}>×</button>
             </div>
 
             {/* Top merchants */}
             <div style={{ padding: '16px 24px 24px' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>
                 Top {topMerchants.length} Merchants
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1110,16 +1114,16 @@
                   return (
                     <div key={m.name}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 5 }}>
-                        <span style={{ color: '#475569', fontSize: 12, fontWeight: 700, width: 18, flexShrink: 0 }}>#{i+1}</span>
-                        <span style={{ flex: 1, color: '#e2e8f0', fontSize: 14, fontWeight: 600 }} className="truncate">{m.name}</span>
-                        <span style={{ color: '#64748b', fontSize: 12, flexShrink: 0 }}>{m.count} tx</span>
+                        <span style={{ color: 'var(--text-dim)', fontSize: 12, fontWeight: 700, width: 18, flexShrink: 0 }}>#{i+1}</span>
+                        <span style={{ flex: 1, color: 'var(--text-base)', fontSize: 14, fontWeight: 600 }} className="truncate">{m.name}</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12, flexShrink: 0 }}>{m.count} tx</span>
                         <span style={{ fontWeight: 800, fontSize: 15, color: cfg.color, flexShrink: 0, width: 80, textAlign: 'right' }}>{fmt(m.total)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ flex: 1, background: '#1e293b', borderRadius: 999, height: 6, overflow: 'hidden' }}>
+                        <div style={{ flex: 1, background: 'var(--border)', borderRadius: 999, height: 6, overflow: 'hidden' }}>
                           <div style={{ height: '100%', borderRadius: 999, background: cfg.color, width: `${pct}%`, transition: 'width 0.4s ease' }} />
                         </div>
-                        <span style={{ color: '#475569', fontSize: 12, width: 36, textAlign: 'right', flexShrink: 0 }}>{pct.toFixed(0)}%</span>
+                        <span style={{ color: 'var(--text-dim)', fontSize: 12, width: 36, textAlign: 'right', flexShrink: 0 }}>{pct.toFixed(0)}%</span>
                       </div>
                     </div>
                   );
@@ -1160,25 +1164,25 @@
                       {cfg.icon}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 16, color: '#f1f5f9' }}>{category}</div>
-                      <div style={{ color: '#64748b', fontSize: 13 }}>{catTxs.length} transactions · avg {fmtD(avgTx)}</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--text-hi)' }}>{category}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{catTxs.length} transactions · avg {fmtD(avgTx)}</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{ fontWeight: 800, fontSize: 22, color: cfg.color }}>{fmt(catTotal)}</div>
-                      <div style={{ color: '#64748b', fontSize: 13 }}>{pct}% of total</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{pct}% of total</div>
                     </div>
                   </div>
                   <div className="progress-bar-wrap" style={{ marginBottom: 12 }}>
                     <div className="progress-bar" style={{ width: `${pct}%`, background: cfg.color }} />
                   </div>
                   {rec && (
-                    <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
+                    <div style={{ background: 'var(--bg-deep)', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
                       <span style={{ color: '#22c55e', fontWeight: 600 }}>💡 Best card: </span>
-                      <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{rec.card}</span>
-                      <span style={{ color: '#64748b' }}> · {rec.rate}</span>
+                      <span style={{ color: 'var(--text-base)', fontWeight: 600 }}>{rec.card}</span>
+                      <span style={{ color: 'var(--text-muted)' }}> · {rec.rate}</span>
                     </div>
                   )}
-                  <div style={{ marginTop: 10, color: '#334155', fontSize: 12, textAlign: 'right' }}>
+                  <div style={{ marginTop: 10, color: 'var(--border-mid)', fontSize: 12, textAlign: 'right' }}>
                     Top merchants →
                   </div>
                 </div>
@@ -1218,7 +1222,7 @@
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
             <div>
               <div className="section-title" style={{ marginBottom: 2 }}>Spend by Category &amp; Month</div>
-              <div style={{ color: '#64748b', fontSize: 13 }}>Cell shading shows each category's relative high — darker = peak month</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Cell shading shows each category's relative high — darker = peak month</div>
             </div>
             <select value={limit} onChange={e => setLimit(e.target.value === 'all' ? 'all' : Number(e.target.value))}>
               <option value={5}>Top 5 categories</option>
@@ -1230,11 +1234,11 @@
             <table style={{ fontSize: 12, width: '100%', borderCollapse: 'separate', borderSpacing: 3 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '4px 10px', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap', minWidth: 160 }}>Category</th>
+                  <th style={{ textAlign: 'left', padding: '4px 10px', color: 'var(--text-dim)', fontWeight: 600, whiteSpace: 'nowrap', minWidth: 160 }}>Category</th>
                   {MONTHS_SHORT.map(mo => (
-                    <th key={mo} style={{ padding: '4px 6px', color: '#475569', fontWeight: 600, textAlign: 'center', minWidth: 54 }}>{mo}</th>
+                    <th key={mo} style={{ padding: '4px 6px', color: 'var(--text-dim)', fontWeight: 600, textAlign: 'center', minWidth: 54 }}>{mo}</th>
                   ))}
-                  <th style={{ padding: '4px 10px', color: '#475569', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Total</th>
+                  <th style={{ padding: '4px 10px', color: 'var(--text-dim)', fontWeight: 600, textAlign: 'right', whiteSpace: 'nowrap' }}>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -1243,17 +1247,17 @@
                   return (
                     <tr key={category}>
                       <td style={{ padding: '4px 10px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{cfg.icon} {category}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--text-base)' }}>{cfg.icon} {category}</span>
                       </td>
                       {monthKeys.map(mk => {
                         const val = byMonth[mk] || 0;
                         const intensity = peak > 0 && val > 0 ? val / peak : 0;
                         const alpha = val > 0 ? Math.round(30 + intensity * 195).toString(16).padStart(2, '0') : '00';
-                        const textColor = intensity > 0.55 ? '#f1f5f9' : intensity > 0 ? cfg.color : '#334155';
+                        const textColor = intensity > 0.55 ? 'var(--text-hi)' : intensity > 0 ? cfg.color : 'var(--border-mid)';
                         return (
                           <td key={mk} style={{
-                            background: val > 0 ? cfg.color + alpha : '#0a0f1e',
-                            border: `1px solid ${val > 0 ? cfg.color + '33' : '#0f172a'}`,
+                            background: val > 0 ? cfg.color + alpha : 'var(--bg-base)',
+                            border: `1px solid ${val > 0 ? cfg.color + '33' : 'var(--bg-deep)'}`,
                             borderRadius: 5,
                             padding: '5px 4px',
                             textAlign: 'center',
@@ -1261,7 +1265,7 @@
                             color: textColor,
                             transition: 'background 0.2s',
                           }}>
-                            {val > 0 ? fmtK(val) : <span style={{ color: '#1e293b' }}>—</span>}
+                            {val > 0 ? fmtK(val) : <span style={{ color: 'var(--border)' }}>—</span>}
                           </td>
                         );
                       })}
@@ -1283,6 +1287,8 @@
     function DayOfWeekChart({ transactions }) {
       const ref = useRef();
       const chartInst = useRef(null);
+      const isDark = React.useContext(ThemeCtx);
+      const cc = useChartColors();
 
       const dayData = useMemo(() => {
         const totals = Array(7).fill(0);
@@ -1321,6 +1327,8 @@
             plugins: {
               legend: { display: false },
               tooltip: {
+                backgroundColor: cc.ttBg, borderColor: cc.ttBor, borderWidth: 1,
+                titleColor: cc.ttTitle, bodyColor: cc.ttBody, padding: 12,
                 callbacks: {
                   label: ctx => [
                     ` ${fmtD(ctx.raw)}`,
@@ -1331,14 +1339,14 @@
               }
             },
             scales: {
-              x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
-              y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', callback: v => fmtK(v) } },
+              x: { grid: { color: cc.grid }, ticks: { color: cc.tick } },
+              y: { grid: { color: cc.grid }, ticks: { color: cc.tick, callback: v => fmtK(v) } },
             },
             animation: { duration: 500 },
           }
         });
         return () => { if (chartInst.current) chartInst.current.destroy(); };
-      }, [JSON.stringify(dayData)]);
+      }, [JSON.stringify(dayData), isDark]);
 
       const sorted = [...dayData].sort((a, b) => b.total - a.total);
       const peak = sorted[0];
@@ -1349,26 +1357,26 @@
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
             <div>
               <div className="section-title" style={{ marginBottom: 2 }}>Spending by Day of Week</div>
-              <div style={{ color: '#64748b', fontSize: 13 }}>Total charged across all cards by weekday</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Total charged across all cards by weekday</div>
             </div>
             <div style={{ display: 'flex', gap: 20 }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>Biggest day</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Biggest day</div>
                 <div style={{ fontWeight: 700, color: '#6366f1' }}>{peak?.day} · {fmtK(peak?.total || 0)}</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>Lightest day</div>
-                <div style={{ fontWeight: 700, color: '#475569' }}>{lightest?.day} · {fmtK(lightest?.total || 0)}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>Lightest day</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-dim)' }}>{lightest?.day} · {fmtK(lightest?.total || 0)}</div>
               </div>
             </div>
           </div>
           <div style={{ height: 220 }}><canvas ref={ref} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginTop: 14 }}>
             {dayData.map(({ day, total, count }) => (
-              <div key={day} style={{ textAlign: 'center', padding: '8px 4px', background: '#0f172a', borderRadius: 8 }}>
-                <div style={{ color: '#64748b', fontSize: 11, marginBottom: 2 }}>{day}</div>
-                <div style={{ fontWeight: 700, color: total > 0 ? '#e2e8f0' : '#334155', fontSize: 13 }}>{total > 0 ? fmtK(total) : '—'}</div>
-                <div style={{ color: '#475569', fontSize: 10 }}>{count} tx</div>
+              <div key={day} style={{ textAlign: 'center', padding: '8px 4px', background: 'var(--bg-deep)', borderRadius: 8 }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 2 }}>{day}</div>
+                <div style={{ fontWeight: 700, color: total > 0 ? 'var(--text-base)' : 'var(--border-mid)', fontSize: 13 }}>{total > 0 ? fmtK(total) : '—'}</div>
+                <div style={{ color: 'var(--text-dim)', fontSize: 10 }}>{count} tx</div>
               </div>
             ))}
           </div>
@@ -1387,9 +1395,9 @@
                 const key = monthKeys[idx];
                 const total = Object.values(monthlyByCard).reduce((s, byM) => s + (byM[key]||0), 0);
                 return (
-                  <div key={mo} style={{ textAlign: 'center', padding: '8px 4px', background: '#0f172a', borderRadius: 8 }}>
-                    <div style={{ color: '#64748b', fontSize: 12, marginBottom: 2 }}>{mo}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: total > 0 ? '#e2e8f0' : '#334155' }}>
+                  <div key={mo} style={{ textAlign: 'center', padding: '8px 4px', background: 'var(--bg-deep)', borderRadius: 8 }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 2 }}>{mo}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: total > 0 ? 'var(--text-base)' : 'var(--border-mid)' }}>
                       {total > 0 ? fmtK(total) : '—'}
                     </div>
                   </div>
@@ -1455,9 +1463,9 @@
             <button
               onClick={e => { e.stopPropagation(); onOverride(tx, undefined); }}
               title={`Remove learned rule · revert to: ${tx._autoCategory || 'auto'}`}
-              style={{ background: 'none', color: '#475569', fontSize: 13, lineHeight: 1, padding: '0 3px', borderRadius: 4, transition: 'color 0.15s' }}
+              style={{ background: 'none', color: 'var(--text-dim)', fontSize: 13, lineHeight: 1, padding: '0 3px', borderRadius: 4, transition: 'color 0.15s' }}
               onMouseEnter={e => e.target.style.color='#ef4444'}
-              onMouseLeave={e => e.target.style.color='#475569'}
+              onMouseLeave={e => e.target.style.color='var(--text-dim)'}
             >✕</button>
           )}
         </div>
@@ -1524,7 +1532,7 @@
 
           {/* Status + override controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-            <span style={{ color: '#64748b', fontSize: 13 }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>
               {filtered.length} transactions · {fmt(pageTotal)}
               {pages > 1 && ` · Page ${page} of ${pages}`}
             </span>
@@ -1534,16 +1542,16 @@
                 <button
                   onClick={() => setModifiedOnly(v => !v)}
                   style={{
-                    background: modifiedOnly ? '#1e3a8a' : '#1e293b',
-                    color: modifiedOnly ? '#93c5fd' : '#94a3b8',
+                    background: modifiedOnly ? '#1e3a8a' : 'var(--border)',
+                    color: modifiedOnly ? '#93c5fd' : 'var(--text-sub)',
                     padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                    border: `1px solid ${modifiedOnly ? '#3b82f6' : '#334155'}`,
+                    border: `1px solid ${modifiedOnly ? '#3b82f6' : 'var(--border-mid)'}`,
                   }}>
                   🧠 {overrideCount} merchant{overrideCount !== 1 ? 's' : ''} learned{modifiedOnly ? ' (showing)' : ''}
                 </button>
                 <button
                   onClick={() => { if (window.confirm(`Clear all ${overrideCount} learned merchant rules?`)) onResetAll(); }}
-                  style={{ background: '#1e293b', color: '#f87171', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid #334155' }}>
+                  style={{ background: 'var(--border)', color: '#f87171', padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid #334155' }}>
                   Reset all
                 </button>
               </>
@@ -1551,9 +1559,9 @@
           </div>
 
           {/* Hint */}
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ background: 'var(--bg-deep)', border: '1px solid #1e293b', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>✏️</span>
-            <span>Click any <strong style={{ color: '#64748b' }}>category badge</strong> to reassign it. The app <strong style={{ color: '#64748b' }}>learns the rule for that merchant</strong> — every transaction from that merchant updates instantly and the rule persists across sessions. Learned transactions show <strong style={{ color: '#64748b' }}>🧠</strong>.</span>
+            <span>Click any <strong style={{ color: 'var(--text-muted)' }}>category badge</strong> to reassign it. The app <strong style={{ color: 'var(--text-muted)' }}>learns the rule for that merchant</strong> — every transaction from that merchant updates instantly and the rule persists across sessions. Learned transactions show <strong style={{ color: 'var(--text-muted)' }}>🧠</strong>.</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -1570,7 +1578,7 @@
                         onClick={sortable ? () => toggleSort(col) : undefined}
                         style={{
                           padding: '10px 12px', fontWeight: 600, whiteSpace: 'nowrap',
-                          color: active ? '#93c5fd' : '#64748b',
+                          color: active ? '#93c5fd' : 'var(--text-muted)',
                           cursor: sortable ? 'pointer' : 'default',
                           userSelect: 'none',
                         }}>
@@ -1585,21 +1593,21 @@
                   const cardCfg = CARD_CONFIG[t.card] || {};
                   return (
                     <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
-                      <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
-                      <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
+                      <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                      <td style={{ padding: '10px 12px', color: 'var(--text-base)', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
                       <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
                         <span style={{ color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</span>
                       </td>
                       <td style={{ padding: '10px 12px' }}>
                         <CategoryCell tx={t} overrides={overrides} onOverride={onOverride} />
                       </td>
-                      <td style={{ padding: '10px 12px', fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
-                      <td style={{ padding: '10px 12px', color: '#64748b' }}>{t.cardHolder}</td>
+                      <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--text-hi)', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
+                      <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{t.cardHolder}</td>
                     </tr>
                   );
                 })}
                 {!pageTxs.length && (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: '#334155' }}>No transactions match your filters</td></tr>
+                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'var(--border-mid)' }}>No transactions match your filters</td></tr>
                 )}
               </tbody>
             </table>
@@ -1608,15 +1616,15 @@
           {pages > 1 && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
               <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page===1}
-                style={{ background: '#1e293b', color: '#94a3b8', padding: '8px 16px', borderRadius: 8, fontSize: 13, opacity: page===1 ? 0.4 : 1 }}>← Prev</button>
+                style={{ background: 'var(--border)', color: 'var(--text-sub)', padding: '8px 16px', borderRadius: 8, fontSize: 13, opacity: page===1 ? 0.4 : 1 }}>← Prev</button>
               {Array.from({ length: Math.min(7, pages) }, (_, i) => {
                 const pg = page <= 4 ? i+1 : page >= pages-3 ? pages-6+i : page-3+i;
                 if (pg < 1 || pg > pages) return null;
                 return <button key={pg} onClick={() => setPage(pg)}
-                  style={{ background: pg===page ? '#1e40af' : '#1e293b', color: pg===page ? '#fff' : '#94a3b8', padding: '8px 14px', borderRadius: 8, fontSize: 13 }}>{pg}</button>;
+                  style={{ background: pg===page ? '#1e40af' : 'var(--border)', color: pg===page ? '#fff' : 'var(--text-sub)', padding: '8px 14px', borderRadius: 8, fontSize: 13 }}>{pg}</button>;
               })}
               <button onClick={() => setPage(p => Math.min(pages, p+1))} disabled={page===pages}
-                style={{ background: '#1e293b', color: '#94a3b8', padding: '8px 16px', borderRadius: 8, fontSize: 13, opacity: page===pages ? 0.4 : 1 }}>Next →</button>
+                style={{ background: 'var(--border)', color: 'var(--text-sub)', padding: '8px 16px', borderRadius: 8, fontSize: 13, opacity: page===pages ? 0.4 : 1 }}>Next →</button>
             </div>
           )}
         </div>
@@ -1634,11 +1642,11 @@
             <div style={{ fontSize: 28, flexShrink: 0 }}>{emoji}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>{title}</span>
+                <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-hi)' }}>{title}</span>
                 {tag && <span style={{ background: tagColor + '22', color: tagColor, padding: '2px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700 }}>{tag}</span>}
               </div>
               {headline && <div style={{ fontWeight: 700, fontSize: 20, color: tagColor, marginBottom: 6 }}>{headline}</div>}
-              <div style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6 }}>{body}</div>
+              <div style={{ color: 'var(--text-sub)', fontSize: 13, lineHeight: 1.6 }}>{body}</div>
             </div>
           </div>
         </div>
@@ -1679,23 +1687,23 @@
           <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div>
               <div className="section-title" style={{ marginBottom: 2 }}>🎯 What-If: Optimal Card Routing</div>
-              <div style={{ color: '#64748b', fontSize: 13 }}>How much more you'd earn if every purchase went to the best available card for that category</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>How much more you'd earn if every purchase went to the best available card for that category</div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: '#22c55e' }}>{fmt(totalGap)}</div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>additional annual opportunity</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>additional annual opportunity</div>
             </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#0a0f1e' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 16px', color: '#475569', fontWeight: 600 }}>Category</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Spend</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Current Rate</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Best Card</th>
-                  <th style={{ textAlign: 'right', padding: '10px 12px', color: '#475569', fontWeight: 600 }}>Best Rate</th>
-                  <th style={{ textAlign: 'right', padding: '10px 16px', color: '#475569', fontWeight: 600 }}>Gap</th>
+                <tr style={{ background: 'var(--bg-base)' }}>
+                  <th style={{ textAlign: 'left', padding: '10px 16px', color: 'var(--text-dim)', fontWeight: 600 }}>Category</th>
+                  <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-dim)', fontWeight: 600 }}>Spend</th>
+                  <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-dim)', fontWeight: 600 }}>Current Rate</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-dim)', fontWeight: 600 }}>Best Card</th>
+                  <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-dim)', fontWeight: 600 }}>Best Rate</th>
+                  <th style={{ textAlign: 'right', padding: '10px 16px', color: 'var(--text-dim)', fontWeight: 600 }}>Gap</th>
                 </tr>
               </thead>
               <tbody>
@@ -1705,13 +1713,13 @@
                     <tr key={category} style={{ borderTop: '1px solid #1e293b', background: i % 2 === 0 ? 'transparent' : '#ffffff04' }}>
                       <td style={{ padding: '10px 16px', whiteSpace: 'nowrap' }}>
                         <span style={{ color: cfg.color }}>{cfg.icon}</span>{' '}
-                        <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{category}</span>
+                        <span style={{ color: 'var(--text-base)', fontWeight: 600 }}>{category}</span>
                       </td>
-                      <td style={{ textAlign: 'right', padding: '10px 12px', color: '#94a3b8' }}>{fmt(total)}</td>
-                      <td style={{ textAlign: 'right', padding: '10px 12px', color: '#64748b' }}>{actualPct.toFixed(1)}%</td>
+                      <td style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-sub)' }}>{fmt(total)}</td>
+                      <td style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-muted)' }}>{actualPct.toFixed(1)}%</td>
                       <td style={{ padding: '10px 12px' }}>
-                        <div style={{ color: '#e2e8f0', fontWeight: 600 }}>{optimal.card}</div>
-                        <div style={{ color: '#64748b', fontSize: 11 }}>{optimal.desc}</div>
+                        <div style={{ color: 'var(--text-base)', fontWeight: 600 }}>{optimal.card}</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{optimal.desc}</div>
                       </td>
                       <td style={{ textAlign: 'right', padding: '10px 12px', color: '#a78bfa', fontWeight: 700 }}>{optimal.pct.toFixed(1)}%</td>
                       <td style={{ textAlign: 'right', padding: '10px 16px', color: '#22c55e', fontWeight: 800 }}>{fmt(gap)}</td>
@@ -1721,7 +1729,7 @@
               </tbody>
             </table>
           </div>
-          <div style={{ padding: '10px 16px', borderTop: '1px solid #1e293b', color: '#334155', fontSize: 11 }}>
+          <div style={{ padding: '10px 16px', borderTop: '1px solid #1e293b', color: 'var(--border-mid)', fontSize: 11 }}>
             * Current rate estimated from card × category bonus tiers. Optimal rates use best available card. Assumes ~1.5¢/MR point and ~1.5¢/UR point.
           </div>
         </div>
@@ -1770,16 +1778,16 @@
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Big opportunity banner */}
-          <div style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1a2b4a 100%)', border: '1px solid #2d4f7a', borderRadius: 16, padding: 24, marginBottom: 8 }}>
+          <div style={{ background: 'var(--banner-bg)', border: '1px solid var(--banner-border)', borderRadius: 16, padding: 24, marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ fontSize: 40 }}>🚀</div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: 20, color: '#f1f5f9', marginBottom: 4 }}>Your Rewards Optimization Opportunity</div>
-                <div style={{ color: '#94a3b8', fontSize: 14 }}>By strategically routing spend to the right cards, you could capture an additional</div>
+                <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--text-hi)', marginBottom: 4 }}>Your Rewards Optimization Opportunity</div>
+                <div style={{ color: 'var(--text-sub)', fontSize: 14 }}>By strategically routing spend to the right cards, you could capture an additional</div>
               </div>
               <div style={{ marginLeft: 'auto', textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontWeight: 900, fontSize: 36, color: '#22c55e' }}>{fmt(totalOppty)}</div>
-                <div style={{ color: '#64748b', fontSize: 13 }}>estimated additional value / year</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>estimated additional value / year</div>
               </div>
             </div>
           </div>
@@ -1900,7 +1908,7 @@
                 <thead>
                   <tr style={{ borderBottom: '1px solid #1e293b' }}>
                     {['Category','Your Spend','Best Card','Rate','Notes'].map(h => (
-                      <th key={h} style={{ padding: '10px 12px', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>
+                      <th key={h} style={{ padding: '10px 12px', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'left' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1915,10 +1923,10 @@
                             {cfg.icon} {category}
                           </span>
                         </td>
-                        <td style={{ padding: '10px 12px', fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap' }}>{fmt(catTotal)}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--text-hi)', whiteSpace: 'nowrap' }}>{fmt(catTotal)}</td>
                         <td style={{ padding: '10px 12px', fontWeight: 600, color: '#22c55e', whiteSpace: 'nowrap' }}>{rec?.card || 'Citi Double Cash'}</td>
-                        <td style={{ padding: '10px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{rec?.rate || '2%'}</td>
-                        <td style={{ padding: '10px 12px', color: '#64748b', fontSize: 12 }}>{rec?.note || ''}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-sub)', whiteSpace: 'nowrap' }}>{rec?.rate || '2%'}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: 12 }}>{rec?.note || ''}</td>
                       </tr>
                     );
                   })}
@@ -1932,8 +1940,8 @@
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <div style={{ fontSize: 32 }}>✈️</div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: 18, color: '#f1f5f9' }}>Delta SkyMiles Maximization</div>
-                <div style={{ color: '#64748b', fontSize: 13 }}>If Delta is your primary airline partner</div>
+                <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-hi)' }}>Delta SkyMiles Maximization</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>If Delta is your primary airline partner</div>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 14 }}>
@@ -1943,10 +1951,10 @@
                 { card: 'Amex Platinum → Delta',     pts: `5x on flights + Global Entry fee`, desc: 'MR transfers 1:1 to Delta SkyMiles. Best for premium flight bookings and lounge access.' },
                 { card: 'Chase Sapphire Reserve',    pts: `3x UR on travel → transfer to Flying Blue or United`, desc: 'More flexible — UR transfers to 14 airline partners. Great if you fly multiple carriers.' },
               ].map(({ card, pts, desc }) => (
-                <div key={card} style={{ background: '#0f172a', borderRadius: 12, padding: 16, border: '1px solid #1e293b' }}>
+                <div key={card} style={{ background: 'var(--bg-deep)', borderRadius: 12, padding: 16, border: '1px solid #1e293b' }}>
                   <div style={{ fontWeight: 700, color: '#3b82f6', fontSize: 14, marginBottom: 6 }}>{card}</div>
-                  <div style={{ fontWeight: 600, color: '#e2e8f0', fontSize: 13, marginBottom: 6 }}>{pts}</div>
-                  <div style={{ color: '#64748b', fontSize: 12, lineHeight: 1.5 }}>{desc}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-base)', fontSize: 13, marginBottom: 6 }}>{pts}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.5 }}>{desc}</div>
                 </div>
               ))}
             </div>
@@ -1963,9 +1971,9 @@
                 { icon: '🔄', text: `Annual card review: Call each issuer every Jan 1 to ask for retention offers — especially on high-fee cards like Amex Platinum. Issuers often offer $200–500 in statement credits to keep you.` },
                 { icon: '📊', text: `Use this analysis every quarter to spot subscription creep — unused recurring charges compound quickly.` },
               ].map(({ icon, text }, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 16px', background: '#0f172a', borderRadius: 10 }}>
+                <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 16px', background: 'var(--bg-deep)', borderRadius: 10 }}>
                   <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
-                  <span style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6 }}>{text}</span>
+                  <span style={{ color: 'var(--text-sub)', fontSize: 14, lineHeight: 1.6 }}>{text}</span>
                 </div>
               ))}
             </div>
@@ -1973,7 +1981,7 @@
 
           <WhatIfSection transactions={transactions} />
 
-          <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
+          <div style={{ color: 'var(--border-mid)', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
             * Reward estimates based on publicly available card terms. Transfer partner values and card benefits may change. Annual fees not included in opportunity calculations.
           </div>
         </div>
@@ -2050,21 +2058,21 @@
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <div className="section-title" style={{ marginBottom: 2 }}>🎗️ Charitable Contributions</div>
-                <div style={{ color: '#64748b', fontSize: 13 }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                   {charityTxs.length} donation{charityTxs.length !== 1 ? 's' : ''} · {fmt(charityTotal)} total · deductible on Schedule A (if itemizing)
                 </div>
               </div>
               <button
                 onClick={copyForTaxPrep}
-                style={{ background: copied ? '#14532d' : '#1e293b', color: copied ? '#4ade80' : '#94a3b8',
-                  border: `1px solid ${copied ? '#166534' : '#334155'}`, borderRadius: 8,
+                style={{ background: copied ? '#14532d' : 'var(--border)', color: copied ? '#4ade80' : 'var(--text-sub)',
+                  border: `1px solid ${copied ? '#166534' : 'var(--border-mid)'}`, borderRadius: 8,
                   padding: '8px 16px', fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}>
                 {copied ? '✓ Copied!' : '📋 Copy for tax prep'}
               </button>
             </div>
 
             {charityTxs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: '#334155' }}>
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--border-mid)' }}>
                 No transactions categorized as Charity &amp; Donations yet.
               </div>
             ) : (
@@ -2082,7 +2090,7 @@
                         <thead>
                           <tr style={{ borderBottom: '1px solid #1e293b' }}>
                             {['Date','Organization','Card','Amount','Status'].map(h => (
-                              <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                              <th key={h} style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
                             ))}
                           </tr>
                         </thead>
@@ -2091,8 +2099,8 @@
                             const cardCfg = CARD_CONFIG[t.card] || {};
                             return (
                               <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
-                                <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
-                                <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
+                                <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                                <td style={{ padding: '10px 12px', color: 'var(--text-base)', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
                                 <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</td>
                                 <td style={{ padding: '10px 12px', fontWeight: 700, color: '#4ade80', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
                                 <td style={{ padding: '10px 12px' }}>
@@ -2125,7 +2133,7 @@
                           <thead>
                             <tr style={{ borderBottom: '1px solid #1e293b' }}>
                               {['Date','Organization','Card','Amount','Status'].map(h => (
-                                <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                                <th key={h} style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
                               ))}
                             </tr>
                           </thead>
@@ -2135,8 +2143,8 @@
                             const cardCfg = CARD_CONFIG[t.card] || {};
                             return (
                               <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
-                                <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
-                                <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
+                                <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                                <td style={{ padding: '10px 12px', color: 'var(--text-base)', maxWidth: 300 }} className="truncate" title={t.description}>{t.description}</td>
                                 <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</td>
                                 <td style={{ padding: '10px 12px', fontWeight: 700, color: '#4ade80', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
                                 <td style={{ padding: '10px 12px' }}>
@@ -2155,7 +2163,7 @@
 
                 {/* Total row */}
                 <div style={{ borderTop: '1px solid #1e293b', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24 }}>
-                  <span style={{ color: '#64748b', fontSize: 14 }}>{charityTxs.length} donations</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{charityTxs.length} donations</span>
                   <span style={{ fontWeight: 800, fontSize: 22, color: '#4ade80' }}>{fmtD(charityTotal)}</span>
                 </div>
               </>
@@ -2163,8 +2171,8 @@
           </div>
 
           {/* IRS documentation rules callout */}
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, padding: '16px 20px' }}>
-            <div style={{ fontWeight: 700, color: '#f1f5f9', marginBottom: 10, fontSize: 14 }}>📋 IRS Documentation Rules (Cash Contributions)</div>
+          <div style={{ background: 'var(--bg-deep)', border: '1px solid #1e293b', borderRadius: 12, padding: '16px 20px' }}>
+            <div style={{ fontWeight: 700, color: 'var(--text-hi)', marginBottom: 10, fontSize: 14 }}>📋 IRS Documentation Rules (Cash Contributions)</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 { range: 'Any amount', req: 'Donate to a qualifying 501(c)(3) organization. Political donations and raffle tickets do not qualify.' },
@@ -2174,7 +2182,7 @@
               ].map(({ range, req }) => (
                 <div key={range} style={{ display: 'flex', gap: 12 }}>
                   <span style={{ color: '#3b82f6', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', minWidth: 130 }}>{range}</span>
-                  <span style={{ color: '#64748b', fontSize: 13, lineHeight: 1.5 }}>{req}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.5 }}>{req}</span>
                 </div>
               ))}
             </div>
@@ -2184,15 +2192,15 @@
           <div className="card">
             <div style={{ marginBottom: 16 }}>
               <div className="section-title" style={{ marginBottom: 2 }}>🏥 Medical &amp; Dental Expenses</div>
-              <div style={{ color: '#64748b', fontSize: 13 }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                 {medicalTxs.length} transaction{medicalTxs.length !== 1 ? 's' : ''} · {fmt(medicalTotal)} total · deductible only to the extent they exceed 7.5% of your AGI
               </div>
             </div>
 
             {/* AGI calculator */}
-            <div style={{ background: '#0f172a', borderRadius: 10, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ background: 'var(--bg-deep)', borderRadius: 10, padding: '14px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <label style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>Enter your AGI:</label>
+                <label style={{ color: 'var(--text-sub)', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>Enter your AGI:</label>
                 <input
                   type="text"
                   placeholder="e.g. 350000"
@@ -2204,16 +2212,16 @@
               {agiNum > 0 && (
                 <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ color: '#64748b', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>7.5% Threshold</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>7.5% Threshold</div>
                     <div style={{ fontWeight: 700, fontSize: 18, color: '#f59e0b' }}>{fmt(medicalThreshold)}</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ color: '#64748b', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Medical Spend</div>
-                    <div style={{ fontWeight: 700, fontSize: 18, color: '#e2e8f0' }}>{fmt(medicalTotal)}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Medical Spend</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--text-base)' }}>{fmt(medicalTotal)}</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ color: '#64748b', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Potentially Deductible</div>
-                    <div style={{ fontWeight: 700, fontSize: 18, color: medicalDeductible > 0 ? '#4ade80' : '#475569' }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Potentially Deductible</div>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: medicalDeductible > 0 ? '#4ade80' : 'var(--text-dim)' }}>
                       {medicalDeductible > 0 ? fmt(medicalDeductible) : 'Below threshold'}
                     </div>
                   </div>
@@ -2222,14 +2230,14 @@
             </div>
 
             {medicalTxs.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: '#334155' }}>No transactions categorized as Health &amp; Medical.</div>
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--border-mid)' }}>No transactions categorized as Health &amp; Medical.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table style={{ fontSize: 13, width: '100%' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #1e293b' }}>
                       {['Date','Provider / Description','Card','Amount'].map(h => (
-                        <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                        <th key={h} style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2238,24 +2246,24 @@
                       const cardCfg = CARD_CONFIG[t.card] || {};
                       return (
                         <tr key={t.id} className="tx-row" style={{ borderBottom: '1px solid #0f172a' }}>
-                          <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
-                          <td style={{ padding: '10px 12px', color: '#e2e8f0', maxWidth: 340 }} className="truncate" title={t.description}>{t.description}</td>
+                          <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{t.dateStr}</td>
+                          <td style={{ padding: '10px 12px', color: 'var(--text-base)', maxWidth: 340 }} className="truncate" title={t.description}>{t.description}</td>
                           <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', color: cardCfg.color, fontWeight: 600 }}>{cardCfg.emoji} {cardCfg.short || t.card}</td>
-                          <td style={{ padding: '10px 12px', fontWeight: 700, color: '#f1f5f9', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
+                          <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--text-hi)', whiteSpace: 'nowrap', textAlign: 'right' }}>{fmtD(t.amount)}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
                 <div style={{ borderTop: '1px solid #1e293b', marginTop: 12, paddingTop: 12, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 24 }}>
-                  <span style={{ color: '#64748b', fontSize: 14 }}>{medicalTxs.length} transactions</span>
-                  <span style={{ fontWeight: 800, fontSize: 22, color: '#f1f5f9' }}>{fmtD(medicalTotal)}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>{medicalTxs.length} transactions</span>
+                  <span style={{ fontWeight: 800, fontSize: 22, color: 'var(--text-hi)' }}>{fmtD(medicalTotal)}</span>
                 </div>
               </div>
             )}
           </div>
 
-          <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '4px 0' }}>
+          <div style={{ color: 'var(--border-mid)', fontSize: 12, textAlign: 'center', padding: '4px 0' }}>
             * This is not tax advice. Deductibility depends on your filing status, AGI, whether you itemize, and whether each organization qualifies under IRC §170. Consult a CPA or tax advisor before filing.
           </div>
         </div>
@@ -2313,14 +2321,14 @@
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Summary banner */}
-          <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', border: '1px solid #2d3f5a', borderRadius: 16, padding: 20, display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--border) 0%, var(--bg-deep) 100%)', border: '1px solid var(--banner-border)', borderRadius: 16, padding: 20, display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'center' }}>
             <div>
-              <div style={{ color: '#64748b', fontSize: 12, marginBottom: 2 }}>Recurring charges detected</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: '#e2e8f0' }}>{subs.length}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 2 }}>Recurring charges detected</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-base)' }}>{subs.length}</div>
             </div>
             <div>
-              <div style={{ color: '#64748b', fontSize: 12, marginBottom: 2 }}>Combined annual est.</div>
-              <div style={{ fontSize: 32, fontWeight: 800, color: '#e2e8f0' }}>{fmt(annualTotal)}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 2 }}>Combined annual est.</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-base)' }}>{fmt(annualTotal)}</div>
             </div>
             {cancelTotal > 0 && (
               <div style={{ marginLeft: 'auto' }}>
@@ -2334,7 +2342,7 @@
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e293b' }}>
               <div className="section-title" style={{ marginBottom: 2 }}>Recurring Charges</div>
-              <div style={{ fontSize: 13, color: '#64748b' }}>Merchants detected in 2+ months. Tag each as Keep, Review, or Cancel to track your subscriptions.</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Merchants detected in 2+ months. Tag each as Keep, Review, or Cancel to track your subscriptions.</div>
             </div>
             {subs.map(sub => {
               const cfg = CATEGORY_CONFIG[sub.category] || CATEGORY_CONFIG['Other'];
@@ -2344,18 +2352,18 @@
               return (
                 <div key={sub.key} style={{ padding: '14px 20px', borderBottom: rowBorder, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', transition: 'background 0.2s', background: tag === 'cancel' ? '#ef444408' : tag === 'keep' ? '#22c55e08' : 'transparent' }}>
                   <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, color: '#e2e8f0', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.key}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-base)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.key}</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                       <span style={{ fontSize: 11, background: cfg.color + '22', color: cfg.color, padding: '1px 7px', borderRadius: 999, fontWeight: 600 }}>{cfg.icon} {sub.category}</span>
-                      <span style={{ fontSize: 11, color: '#64748b' }}>{sub.months} of 12 months · {sub.count} charges</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{sub.months} of 12 months · {sub.count} charges</span>
                       {sub.consistent && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>✓ consistent</span>}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontWeight: 800, color: '#f1f5f9', fontSize: 15 }}>
-                      {fmt(sub.monthlyEst)}<span style={{ fontWeight: 400, color: '#64748b', fontSize: 11 }}>/mo est.</span>
+                    <div style={{ fontWeight: 800, color: 'var(--text-hi)', fontSize: 15 }}>
+                      {fmt(sub.monthlyEst)}<span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}>/mo est.</span>
                     </div>
-                    <div style={{ color: '#475569', fontSize: 12 }}>{fmt(sub.total)} total · {fmt(sub.monthlyEst * 12)}/yr</div>
+                    <div style={{ color: 'var(--text-dim)', fontSize: 12 }}>{fmt(sub.total)} total · {fmt(sub.monthlyEst * 12)}/yr</div>
                   </div>
                   <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                     {[['keep', '✓ Keep', '#22c55e'], ['review', '? Review', '#f59e0b'], ['cancel', '✕ Cancel', '#ef4444']].map(([t, label, color]) => (
@@ -2364,9 +2372,9 @@
                         onClick={() => setTag(sub.key, tag === t ? undefined : t)}
                         style={{
                           padding: '4px 11px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                          border: `1px solid ${tag === t ? color : '#1e293b'}`,
+                          border: `1px solid ${tag === t ? color : 'var(--border)'}`,
                           background: tag === t ? color + '22' : 'transparent',
-                          color: tag === t ? color : '#475569',
+                          color: tag === t ? color : 'var(--text-dim)',
                           cursor: 'pointer', transition: 'all 0.15s',
                         }}
                       >{label}</button>
@@ -2376,7 +2384,7 @@
               );
             })}
           </div>
-          <div style={{ color: '#334155', fontSize: 12, textAlign: 'center', padding: '4px 0' }}>
+          <div style={{ color: 'var(--border-mid)', fontSize: 12, textAlign: 'center', padding: '4px 0' }}>
             Tags are saved locally in your browser. Merchants appearing in 2+ months are included regardless of category.
           </div>
         </div>
@@ -2388,6 +2396,12 @@
     // ─────────────────────────────────────────
 
     function App() {
+      const [isDark, setIsDark] = useState(() => localStorage.getItem('spending-theme') !== 'light');
+      useEffect(() => {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        localStorage.setItem('spending-theme', isDark ? 'dark' : 'light');
+      }, [isDark]);
+
       const [loadedFileList, setLoadedFileList] = useState([]); // [{id, cardType, text, name}]
       const [pendingFiles, setPendingFiles] = useState([]); // [{id, text, name}] — awaiting card type
       const [transactions, setTransactions] = useState([]);
@@ -2505,7 +2519,7 @@
       }, [loadedFileList]);
 
       const loadedFiles = loadedFileList.map(f => {
-        const o = CARD_OPTIONS.find(x => x.value === f.cardType) || { label: f.cardType, color: '#64748b', emoji: '📄' };
+        const o = CARD_OPTIONS.find(x => x.value === f.cardType) || { label: f.cardType, color: 'var(--text-muted)', emoji: '📄' };
         return { key: f.id, id: f.id, name: f.name, cardType: f.cardType, cardLabel: o.label, color: o.color, emoji: o.emoji };
       });
 
@@ -2582,15 +2596,16 @@
       const totalSpend = transactions.reduce((s,t) => s+t.amount, 0);
 
       return (
+        <ThemeCtx.Provider value={isDark}>
         <div className="fade-in">
           {/* Header */}
-          <div style={{ background: 'linear-gradient(180deg, #111827 0%, #0a0f1e 100%)', borderBottom: '1px solid #1e293b', padding: '20px 32px', position: 'sticky', top: 0, zIndex: 50 }}>
+          <div style={{ background: 'linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-base) 100%)', borderBottom: '1px solid var(--border)', padding: '20px 32px', position: 'sticky', top: 0, zIndex: 50 }}>
             <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontWeight: 900, fontSize: 22, background: 'linear-gradient(90deg,#3b82f6,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   💳 Spending Analysis
                 </div>
-                <div style={{ color: '#64748b', fontSize: 13, marginTop: 2 }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 2 }}>
                   {dataYear} · {loadedCount} card{loadedCount > 1 ? 's' : ''} · {transactions.length.toLocaleString()} transactions · {fmt(totalSpend)} total
                 </div>
               </div>
@@ -2609,10 +2624,13 @@
                 <label title="Add a CSV" style={{ cursor: 'pointer' }}>
                   <input type="file" accept=".csv" multiple onChange={e => { handleFiles(Array.from(e.target.files)); e.target.value=''; }} />
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 999,
-                    background: '#1e293b', border: '1px solid #334155', color: '#64748b', fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}>
+                    background: 'var(--border)', border: '1px solid var(--border-mid)', color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, transition: 'all 0.2s' }}>
                     + Add CSV
                   </span>
                 </label>
+                <button className="theme-toggle" onClick={() => setIsDark(d => !d)} title="Toggle light/dark mode">
+                  {isDark ? '☀️ Light' : '🌙 Dark'}
+                </button>
               </div>
             </div>
             {/* Tabs */}
@@ -2640,18 +2658,19 @@
           {toast && (
             <div style={{
               position: 'fixed', bottom: 28, right: 28, zIndex: 9999,
-              background: '#1e293b', border: '1px solid #334155', borderRadius: 12,
-              padding: '13px 20px', color: '#e2e8f0', fontSize: 14, fontWeight: 500,
+              background: 'var(--border)', border: '1px solid var(--border-mid)', borderRadius: 12,
+              padding: '13px 20px', color: 'var(--text-base)', fontSize: 14, fontWeight: 500,
               boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
               display: 'flex', alignItems: 'center', gap: 10, maxWidth: 400,
               animation: 'fadeIn 0.2s ease',
             }}>
               <span style={{ flex: 1 }}>{toast}</span>
               <button onClick={() => setToast(null)}
-                style={{ background: 'none', color: '#475569', fontSize: 16, lineHeight: 1, padding: '0 2px', borderRadius: 4 }}>×</button>
+                style={{ background: 'none', color: 'var(--text-dim)', fontSize: 16, lineHeight: 1, padding: '0 2px', borderRadius: 4 }}>×</button>
             </div>
           )}
         </div>
+        </ThemeCtx.Provider>
       );
     }
 
