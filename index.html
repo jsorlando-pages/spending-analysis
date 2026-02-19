@@ -612,6 +612,28 @@
         .substring(0, 38);
     }
 
+    // Used only for grouping in top-merchant views — does NOT affect override/learned keys.
+    function normalizeForGrouping(name) {
+      let s = name || '';
+      // Strip inline * transaction codes: "Alma*gt1f0n" → "Alma"
+      s = s.replace(/\*[a-z0-9]{4,}/gi, '');
+      // Strip # store references: " #1234", " #store"
+      s = s.replace(/\s*#[a-z0-9]+/gi, '');
+      // Strip trailing US city + state abbreviation (0–2 city words + 2-letter state)
+      s = s.replace(/\s+(?:[a-z]+\s+){0,2}[a-z]{2}\s*$/, '');
+      // Strip digit-prefixed tokens like "00bridgehampton", "0034abc"
+      s = s.replace(/\s+\d+[a-z]\w*/gi, '');
+      // Strip trailing 4+ digit store IDs
+      s = s.replace(/\s+\d{4,}\s*$/, '');
+      // Strip .com
+      s = s.replace(/\.com\b/gi, '');
+      // Strip trailing LLC / Inc / Corp / Co. / Ltd.
+      s = s.replace(/\s+(llc|inc\.?|corp\.?|co\.|ltd\.?)$/i, '');
+      s = s.replace(/\s{2,}/g, ' ').trim();
+      if (!s) return name;
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
     // ─────────────────────────────────────────
     //  CHART COMPONENTS
     // ─────────────────────────────────────────
@@ -947,7 +969,7 @@
       const topMerchants = useMemo(() => {
         const byM = {};
         catTxs.forEach(t => {
-          const key = cleanMerchant(t.merchant || t.description);
+          const key = normalizeForGrouping(t._merchantKey);
           if (!byM[key]) byM[key] = { name: key, total: 0, count: 0 };
           byM[key].total += t.amount;
           byM[key].count++;
@@ -1984,7 +2006,7 @@
           // Card total
           byCard[t.card] = (byCard[t.card] || 0) + t.amount;
           // Merchant
-          const key = cleanMerchant(t.merchant || t.description);
+          const key = normalizeForGrouping(t._merchantKey);
           if (!byMerchant[key]) byMerchant[key] = { name: key, total: 0, count: 0, category: t.category };
           byMerchant[key].total += t.amount;
           byMerchant[key].count++;
