@@ -2301,7 +2301,7 @@
           if (t.category === 'Subscriptions') groups[key].category = 'Subscriptions';
         });
         return Object.values(groups)
-          .filter(g => g.months.size >= 2 || g.category === 'Subscriptions')
+          .filter(g => g.months.size >= 6)
           .map(g => {
             const amounts = g.transactions.map(t => t.amount);
             const total = amounts.reduce((s, v) => s + v, 0);
